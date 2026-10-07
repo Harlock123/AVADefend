@@ -19,14 +19,14 @@ The list of open questions is in RESEARCH.md. Briefly:
 - The RNG does not match the original byte for byte, so runs cannot be compared exactly against MAME.
 - A second, line-by-line audit against the source fixed 18 discrepancies and settled the earlier "inferred" items: ramming scores, a shot hitting the player scores 25, walking humanoids can be shot, and the mutant window, bomber layout and death/restart flow are now as written (see RESEARCH.md).
 - Still open: the off-screen bomber altitude correction, which as written pushes bombers away from their cruise height (implemented as written). The smart-bomb question is resolved: materialising enemies are immune, as in ours.
-- Reconstructions that remain: the look of explosion debris, and sound timbres (event timing, priorities and the one-at-a-time model now follow the source).
+- Reconstructions that remain: sound timbres (event timing, priorities and the one-at-a-time model now follow the source).
 - The terrain profile is deliberately not the arcade's (it is generated under the same constraints).
 - The sprite shapes and colour tables are original approximations, not the arcade's.
 - High scores: like the original we keep "Today's" (8, reset daily) and "All-Time" tables, but All-Time holds 10 rather than 8, as the brief asked.
 
 ## Deferred and missing
 
-- **Attract-mode demo flight.** Implemented, but as a reconstruction: our autopilot flies it, and the original's demo sequence was not studied.
+- **Attract mode.** Follows the source's order, timings and scripted demo with our own artwork. Not reproduced: coin-skip to the demo, the credits line, and the lock that ignores Start until the first logo page has played (we are free play).
 - **2-player play.** Implemented, including the "PLAYER n / GAME OVER" turn-over. Gamepad Start2 defaults to pressing the right stick, which is awkward.
 - **Cocktail flip.** Implemented as a setting (rotates the picture 180° on player two's turns), but not seen on screen. The cocktail cabinet's control-panel switching is not modelled.
 - **Gamepad rebinding UI.** Implemented. The swap logic and control detection are tested (the latter with a virtual controller); not tried with real hardware.

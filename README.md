@@ -39,7 +39,7 @@ It has two presets, **Classic** and **Modern**. Both use the same rules. Modern 
 
 ```bash
 dotnet build Defender.slnx                      # Debug build of all projects
-dotnet test Defender.slnx                       # 174 tests (engine, persistence, audio mixer, headless Avalonia UI)
+dotnet test Defender.slnx                       # 188 tests (engine, persistence, audio mixer, headless Avalonia UI)
 dotnet run --project src/Defender.Avalonia      # play
 ```
 

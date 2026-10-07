@@ -41,7 +41,8 @@ Every audiovisual asset in the game was made for this project. **Nothing was ext
 | 5×7 font | Original | `src/Defender.Avalonia/Rendering/PixelFont.cs` |
 | Application icon (`.ico`, 256-px PNG) | Generated from our own ship sprite by `tools/make_icon.py` | `src/Defender.Avalonia/Assets/` |
 | Terrain profile | Generated procedurally (seed 1981), following the original's format constraints. The Williams terrain table was **not** copied | `src/Defender.Core/Simulation/Terrain.cs` |
-| Colour tables and cycle sequences | Our own choices, in the same 8-bit BBGGGRRR format | `World.cs` |
+| Colour tables and cycle sequences | Our own choices in the same 8-bit BBGGGRRR format, except the per-wave border colour order and the PLEX fade sequence, which are short lists of colour values taken from the source as game parameters | `World.cs`, `Blasts.cs` |
+| Title graphic, logo-page text, notice | Generated from our own font at runtime; the original logo, wordmark and copyright bitmap are **not** reproduced | `SoftwareRenderer.cs` |
 | Palette to RGB levels | Computed from the MAME resistor-network description (MAME is BSD-3-Clause; only the numbers were used) | `SoftwareRenderer.cs` |
 | All sounds | **Synthesised at runtime** by our own code (sweeps, warbles, filtered noise). No samples are used | `src/Defender.Infrastructure/Audio/SoundSynth.cs` |
 

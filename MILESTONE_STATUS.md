@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 174 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 188 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -153,6 +153,16 @@ A fresh read-only review found 8 defects plus 3 minor ones; all are fixed with r
 A second line-by-line audit (player, humanoids, shells, scanner, stars, sound triggers) found 10 discrepancies plus sound-trigger differences; all fixed with tests (`AuditTwoRegressionTests`, `MonophonicBoardTests`, `ScrollFidelityTests`). The largest: ship-slide snaps were wrongly scroll-compensated, which changed scroll feel during acceleration; humanoids walked 1.6× too fast; smart bombs re-armed too early (a double tap spent two); enemy shot aim used pixels instead of byte columns; the planet explosion ran twice as long. The Classic sound model is now the original one-at-a-time priority board.
 
 Also added: `--selftest` (CI runs it on every packaged build) and F9 as a second Settings key.
+
+## Round 9: presentation from the source
+
+| Item | Status |
+|---|---|
+| Explosions and appears: sprite tiles spread/converge (EXST/APST timings, hit-point centre, on-screen only) | Impl, Tested, Observed (renders) |
+| Player explosion PLEX (128 pieces, diamond spread, 108-frame fade) and silhouette blink | Impl, Observed |
+| HUD at the original positions (score field, ships, bombs, 2-px border, window marker) | Impl, Observed |
+| Attract cycle: logo page with converging title, Hall of Fame layout, scripted rescue + roster demo | Impl, Tested, Observed |
+| Code coverage tooling; Core at 98% lines / 91% branches | Measured |
 
 ## Next concrete tasks
 

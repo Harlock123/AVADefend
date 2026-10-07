@@ -122,10 +122,13 @@ After the first implementation we ran a line-by-line comparison of our engine ag
 | Wave-bonus screen | Screen cleared; one humanoid counted every 4 frames; then 128 frames (defa7.src:1786-1845). |
 | Death timing | 32-frame glow during which enemies keep moving; 2 white frames; ~108 explosion frames; then (2-player only) "PLAYER n" for 128 frames and a 96-frame pause. |
 
+## Presentation study
+
+A third study extracted explosions/appears (samexap7.src), the ship explosion (PLEX), the HUD layout and the whole attract sequence (amode1.src) as behaviour: `docs/research/presentation-spec.md`. It also lists what must not be reproduced (company logo, wordmark, copyright bitmap, font and sprite bitmaps, anti-tamper check); we use our own artwork for all of those.
+
 ## Open questions
 
 These are also tracked in KNOWN_ISSUES.md.
 
 1. **Random-number generator.** The exact RNG (a 3-byte LFSR) is not replicated. We use xorshift32. This matters only for byte-exact replay against MAME.
 2. **Bomber off-screen altitude correction.** As written, it pushes bombers *away* from their cruise altitude, so they drift and wrap vertically. We implement it as written; it may be an original quirk.
-3. **Attract-mode demo.** The original attract-mode demo flight was not studied.
