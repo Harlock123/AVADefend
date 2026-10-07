@@ -319,7 +319,7 @@ public sealed class SoftwareRenderer
     private void DrawHallOfFame(FrameSnapshot s)
     {
         uint c1 = s.Mode == GameMode.Modern ? _pal[Pal.White] : _pal[Pal.Laser];   // colour 1 cycles on the arcade
-        DrawSprite(TitleSprite, 96, 56 - 4, 0, _pal[Pal.Yellow]);
+        DrawSprite(TitleSprite, 96, 56 - 4, 0, null, _pal[Pal.Yellow]);   // yellow letters, shadow kept distinct
         Text("HALL OF FAME", 112, 84, c1);
         Text("TODAYS", 68, 104, c1); Text("ALL TIME", 192, 104, c1);
         Text("GREATEST", 60, 114, c1); Text("GREATEST", 190, 114, c1);

@@ -86,7 +86,7 @@ Updated 2026-10-07.
 | Item | Status |
 |---|---|
 | All 9 documents | Written |
-| Windows x64 self-contained publish | **Builds**; never run |
+| Windows x64 single-file package | Builds in CI; `--selftest` passes on a Windows machine (window and sound not yet tried by hand) |
 | Linux arm64 self-contained publish | Builds and runs (Observed) |
 | macOS | Not built |
 | Fidelity validation against MAME footage | Not done |
@@ -99,7 +99,7 @@ Updated 2026-10-07.
 | Attract cycle with silent demonstration flight | Impl, Tested, Observed |
 | Gamepad rebinding UI; swap-safe rebinding for keyboard and gamepad | Impl; logic Tested; no hardware test |
 | 2-player alternating play (2 / F3 to start) | Impl, Tested; 2P HUD observed in a headless render |
-| CI workflow for Windows, Linux, macOS | Written and YAML-validated; **never run** (not pushed) |
+| CI workflow for Windows, Linux, macOS | Running on GitHub: build, tests, 8 platform packages, self-test on 3 OSes, `latest` pre-release |
 
 ## Round 3 additions
 
@@ -122,7 +122,7 @@ A line-by-line comparison against the original routines found 18 discrepancies. 
 | Smart bomb vs materialising enemies resolved from source (immune); appear effect now only on screen | Impl, Tested |
 | Wave-bonus screen timing from source (4 frames per humanoid, 128-frame hold, cleared screen); 128-piece death explosion | Impl, Tested |
 | `--export-sounds` WAV export; peak limiter (removed hard clipping in 3 effects); explosion levels raised | Impl, Tested; levels measured, not listened to |
-| macOS osx-arm64 framework-dependent publish | Builds; not run; unsigned |
+| macOS packages (x64, Arm64) | Build in CI; Arm64 `--selftest` passes including SDL audio; unsigned |
 
 ## Round 6
 

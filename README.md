@@ -1,8 +1,10 @@
-# Defender (1981) — unofficial recreation
+# AVADefend
+
+An unofficial recreation of Williams Electronics' 1981 arcade game *Defender*.
 
 ![Wave 1: the ship fires a spread of lasers at a squad of landers above the mountains, with the scanner showing the whole planet at the top](screenshots/gameplay.png)
 
-This is a recreation of Williams Electronics' 1981 arcade game *Defender*, built with .NET 10, C# and Avalonia. It reproduces the original's mechanics, using the Red Label arcade source code as evidence:
+AVADefend is built with .NET 10, C# and Avalonia. It reproduces the original's mechanics, using the Red Label arcade source code as evidence:
 
 - the five-button controls;
 - momentum physics on a wrap-around planet 2048 pixels wide;
@@ -26,7 +28,7 @@ It has two presets, **Classic** and **Modern**. Both use the same rules. Modern 
 | Losing a ship | End-of-wave humanoid bonus |
 | ![A two-player game: player one's score waiting on the left, player two flying with their score on the right](screenshots/two-players.png) | ![The Hall of Fame with today's and all-time tables side by side](screenshots/hall-of-fame.png) |
 | Two players take turns | Hall of Fame (Today's and All-Time) |
-| ![The title page: our own title graphic under the credit text](screenshots/attract-title.png) | ![The attract demonstration: the ship has caught the falling humanoid for 500 points](screenshots/demo-rescue.png) |
+| ![The title page: the AVADEFEND title graphic under the credit text](screenshots/attract-title.png) | ![The attract demonstration: the ship has caught the falling humanoid for 500 points](screenshots/demo-rescue.png) |
 | Attract mode title page | Attract demo: the rescue |
 | ![The scoring screen: lander, mutant, baiter, bomber, pod and swarmer with their names and points](screenshots/demo-scoring.png) | |
 | Attract demo: the enemies and their points | |
@@ -64,7 +66,7 @@ Unzip or untar and run `Defender` (`Defender.exe` on Windows). The builds are no
 
 - **.NET SDK 10.0.** Verified with 10.0.400 and runtime 10.0.11.
 - **Linux:** an X11 or XWayland session. Every other native library the game needs ships in its NuGet packages: SDL2 (audio and gamepad), Skia and HarfBuzz.
-- **Windows and macOS:** no extra requirements. Note that the game has **not been run** on either (see KNOWN_ISSUES.md).
+- **Windows and macOS:** no extra requirements. The packaged builds pass `--selftest` on Windows x64, macOS Arm64 and Linux x64 in CI; the window, sound and gamepads still need trying by hand there (see KNOWN_ISSUES.md).
 
 ## Build, test, run
 

@@ -2,10 +2,9 @@
 
 ## Platform validation
 
-- **Development and testing took place on Linux aarch64 only** (Arch, Hyprland/Wayland, running through XWayland). The brief named Windows as the first validation platform, but no Windows machine was available.
-- **Windows (win-x64):** a self-contained publish **builds**, and the output contains `Defender.exe`, `SDL2.dll` and the Skia and HarfBuzz native libraries. It has **never been run**.
-- **macOS:** the osx-arm64 framework-dependent build **compiles** and bundles its native libraries, but has **never been run**. It is not code-signed or notarised, so Gatekeeper will block it until signed or explicitly allowed.
-- **Linux x64:** not built and not run. The Linux arm64 build (self-contained) was run.
+- **Interactive development and testing took place on Linux aarch64** (Arch, Hyprland/Wayland, running through XWayland). Windows and macOS are covered by CI self-tests only (below).
+- **Windows, macOS, Linux x64 (CI):** every push builds single-file packages for 8 platforms. The Windows x64, macOS Arm64 and Linux x64 packages are started on real machines of each OS with `--selftest`; on the first run (2026-10-07) the engine, renderer, native Skia and saves folder passed on all three, SDL audio opened on macOS, and SDL loaded on Windows and Linux (those CI machines have no sound device). All three produced the identical self-play result (score 4900, wave 2) as this Linux Arm64 machine.
+- **Not yet tried by hand on Windows or macOS:** the game window, real sound output, gamepads, and the Windows menu-key question below. The builds are not code-signed, so macOS Gatekeeper and Windows SmartScreen will warn (see the README).
 - **Windows keyboard (unverified risk):** F10 (Settings) and Alt (a default Fire key) are Windows' menu-activation keys. The app marks them handled, but whether that fully prevents Windows' menu mode (a beep or a stalled key) needs checking on Windows. If it is a problem, rebind Fire away from Alt (Left Ctrl and J also fire by default), and use F9, which also opens Settings.
 - **First run on a new OS:** `Defender --selftest` prints a pass/fail report without opening a window. CI runs it on the packaged Windows, Linux and macOS builds.
 - **Gamepad:** tested against an **SDL virtual controller** (real SDL GameController code path): hot-plug add and remove, default mapping, deadzone and stick steering all pass. **No physical controller was tested**, so vendor-specific mappings, analog feel and the rebinding UI with real hardware are unverified.
