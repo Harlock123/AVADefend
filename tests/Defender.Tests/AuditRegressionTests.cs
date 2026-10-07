@@ -250,4 +250,22 @@ public class AuditRegressionTests
         Assert.NotEmpty(sw);
         Assert.All(sw, w => Assert.Equal((0x8000, 100, 0), (w.X, w.PixelY, w.Appear)));
     }
+
+    [Fact] // appear (APST)
+    public void Materialising_OnlyOnScreen_AndImmuneToSmartBomb()
+    {
+        for (uint seed = 1; seed < 200; seed++)
+        {
+            var s = TestUtil.NewPlaying(seed);
+            s.TestSetLanderReserve(5);
+            s.TestRunExecutive();
+            Assert.All(s.Enemies, e => Assert.Equal(((e.X - s.CameraX) & 0xFFFF) <= 0x2600, e.Appear > 0));
+            var appearing = s.Enemies.FirstOrDefault(e => e.Appear > 0);
+            if (appearing is null) continue;
+            s.Step(new PlayerInput { SmartBombPressed = true });
+            Assert.False(appearing.Dead);
+            return;
+        }
+        Assert.Fail("no seed produced an on-screen spawn");
+    }
 }

@@ -25,9 +25,12 @@ public sealed partial class GameSession
 
     private Enemy NewEnemy(EnemyKind kind, int x, int yPx, bool appear = true)
     {
-        var e = new Enemy { Id = _nextEnemyId++, Kind = kind, X = WrapX(x), Y = yPx << 8, Appear = appear ? AppearFrames : 0, Nap = 1 };
+        // APST (samexap7.src): the appear effect only runs on screen (OX16 − BGL ≤ $2600); off-screen spawns are
+        // immediate. While appearing the object is flagged (OTYP bit 1), so smart bombs skip it.
+        var e = new Enemy { Id = _nextEnemyId++, Kind = kind, X = WrapX(x), Y = yPx << 8, Nap = 1 };
+        bool visible = ((e.X - CameraX) & Arcade.WorldMask) <= 0x2600;
+        if (appear && visible) { e.Appear = AppearFrames; _sounds.Add(SoundId.LanderMaterialize); }
         Enemies.Add(e);
-        if (appear && OnScreen(e.X)) _sounds.Add(SoundId.LanderMaterialize);
         return e;
     }
 
