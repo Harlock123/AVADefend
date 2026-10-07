@@ -11,7 +11,11 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            desktop.MainWindow = new MainWindow();
+            {
+            var host = new GameHost();
+            if (desktop.Args?.Contains("--autoplay") == true) host.Autopilot = new Core.Simulation.Autopilot();
+            desktop.MainWindow = new MainWindow(host);
+        }
         base.OnFrameworkInitializationCompleted();
     }
 }

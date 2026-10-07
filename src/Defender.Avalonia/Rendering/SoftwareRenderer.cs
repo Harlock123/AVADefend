@@ -1,0 +1,258 @@
+using Defender.Core;
+using Defender.Core.Simulation;
+
+namespace Defender.Avalonia.Rendering;
+
+/// <summary>
+/// Rasterises a <see cref="FrameSnapshot"/> into a 292×240 BGRA buffer: the MAME "defender" visible
+/// area (set_visarea(12,303,7,246)) of the 304×256 game frame. Pure managed code → unit-testable.
+/// </summary>
+public sealed class SoftwareRenderer
+{
+    public const int Width = 292, Height = 240, CropX = 12, CropY = 7;
+    public readonly uint[] Pixels = new uint[Width * Height];
+    private readonly uint[] _pal = new uint[16];
+    private readonly uint[] _byteToArgb = new uint[256];
+
+    public SoftwareRenderer()
+    {
+        // BBGGGRRR through the board's resistor ladders (williams_v.cpp:340-363, computed levels).
+        int[] rg = [0, 38, 81, 118, 137, 174, 217, 255];
+        int[] b = [0, 95, 160, 255];
+        for (int i = 0; i < 256; i++)
+            _byteToArgb[i] = 0xFF000000u | (uint)(rg[i & 7] << 16) | (uint)(rg[(i >> 3) & 7] << 8) | (uint)b[(i >> 6) & 3];
+    }
+
+    public bool ShowControlHints { get; set; } = true;
+    public string? StatusLine { get; set; }
+    public double GameSpeed { get; set; } = 1;
+    public Func<IReadOnlyList<(string Initials, int Score)>>? HighScoreProvider { get; set; }
+
+    public uint Argb(byte paletteByte) => _byteToArgb[paletteByte];
+
+    public void Render(FrameSnapshot s)
+    {
+        for (int i = 0; i < 16; i++) _pal[i] = _byteToArgb[s.Palette[i]];
+        Array.Fill(Pixels, _pal[Pal.Background]);
+
+        switch (s.State)
+        {
+            case SessionState.Attract: DrawAttract(s); DrawHud(s, attract: true); return;
+            case SessionState.GameOver:
+                DrawPlayfield(s); DrawHud(s, false);
+                CenterText("GAME OVER", 130, _pal[Pal.White]);
+                return;
+            case SessionState.EnterInitials: DrawInitials(s); return;
+        }
+        DrawPlayfield(s);
+        DrawHud(s, false);
+        if (s.State == SessionState.LifeStart) CenterText("PLAYER ONE", 120, _pal[Pal.White]);
+        if (s.State == SessionState.WaveComplete) DrawWaveComplete(s);
+        if (s.Paused) { CenterText("PAUSED", 116, _pal[Pal.White]); CenterText("ESC / START TO RESUME", 128, _pal[Pal.Grey]); }
+    }
+
+    // ----- primitives in game coordinates (304×256) -------------------------------------------------
+
+    private void Plot(int gx, int gy, uint c)
+    {
+        int x = gx - CropX, y = gy - CropY;
+        if ((uint)x < Width && (uint)y < Height) Pixels[y * Width + x] = c;
+    }
+
+    private void HLine(int x0, int x1, int y, uint c) { for (int x = x0; x <= x1; x++) Plot(x, y, c); }
+    private void VLine(int x, int y0, int y1, uint c) { for (int y = y0; y <= y1; y++) Plot(x, y, c); }
+
+    private void DrawSprite(Sprite spr, int gx, int gy, int appear = 0, uint? mono = null)
+    {
+        int cx = spr.Width / 2, cy = spr.Height / 2;
+        for (int y = 0; y < spr.Height; y++)
+            for (int x = 0; x < spr.Width; x++)
+            {
+                byte p = spr.Pixels[y * spr.Width + x];
+                if (p == Sprite.Transparent) continue;
+                uint c = mono ?? _pal[p];
+                if (appear > 0)
+                {
+                    // Materialise: pixels converge onto the sprite from a spread-out cloud.
+                    int k = 1 + appear / 3;
+                    Plot(gx + cx + (x - cx) * k, gy + cy + (y - cy) * k, c);
+                }
+                else Plot(gx + x, gy + y, c);
+            }
+    }
+
+    public void Text(string s, int gx, int gy, uint c, int scale = 1)
+    {
+        int cx = gx;
+        foreach (char ch in s.ToUpperInvariant())
+        {
+            if (PixelFont.Glyphs.TryGetValue(ch, out var rows))
+                for (int r = 0; r < PixelFont.GlyphHeight; r++)
+                    for (int col = 0; col < PixelFont.GlyphWidth; col++)
+                        if ((rows[r] >> (PixelFont.GlyphWidth - 1 - col) & 1) != 0)
+                            for (int sy = 0; sy < scale; sy++)
+                                for (int sx = 0; sx < scale; sx++)
+                                    Plot(cx + col * scale + sx, gy + r * scale + sy, c);
+            cx += PixelFont.Advance * scale;
+        }
+    }
+
+    private void CenterText(string s, int gy, uint c, int scale = 1) =>
+        Text(s, CropX + (Width - PixelFont.Measure(s, scale)) / 2, gy, c, scale);
+
+    // ----- playfield ----------------------------------------------------------------------------------
+
+    private void DrawPlayfield(FrameSnapshot s)
+    {
+        foreach (var st in s.Stars) if (st.Y > Arcade.ScannerBottom) Plot(st.X, st.Y, _pal[st.Color & 0xF]);
+        uint ground = _pal[Pal.Brown];
+        for (int x = 0; x < Arcade.ScreenWidth; x++) if (s.TerrainY[x] >= 0) Plot(x, s.TerrainY[x], ground);
+
+        foreach (var d in s.Sprites)
+        {
+            if (d.Y + d.Sprite.Height <= Arcade.ScannerBottom) continue;
+            DrawSprite(d.Sprite, d.X, d.Y, d.Appear, d.Mono is { } m ? _pal[m] : null);
+        }
+        foreach (var l in s.Lasers) DrawLaser(l);
+        foreach (var p in s.Particles) if (p.Y > Arcade.ScannerBottom) { Plot(p.X, p.Y, _pal[p.Color & 0xF]); Plot(p.X + 1, p.Y, _pal[p.Color & 0xF]); }
+        foreach (var t in s.Popups) Text(t.Text, t.X, t.Y, _pal[t.Color]);
+    }
+
+    private void DrawLaser(LaserDraw l)
+    {
+        uint beam = _pal[Pal.Laser], tip = _pal[Pal.White];
+        int a = Math.Min(l.Fizzle, l.Head), b = Math.Max(l.Fizzle, l.Head);
+        HLine(a, b, l.Y, beam);
+        Plot(l.Head, l.Y, tip); Plot(l.Head - l.Dir, l.Y, tip);
+        // Broken trailing section between the tail eraser and the fizzle front.
+        int t0 = Math.Min(l.Tail, l.Fizzle), t1 = Math.Max(l.Tail, l.Fizzle);
+        for (int x = t0; x < t1; x++)
+            if (((x * 7919) ^ (x >> 2)) % 5 < 2) Plot(x, l.Y, beam);
+    }
+
+    // ----- HUD + scanner (top 40 rows) ------------------------------------------------------------------
+
+    private void DrawHud(FrameSnapshot s, bool attract)
+    {
+        uint frame = _pal[Pal.WaveBlue];
+        int left = Arcade.ScannerLeft - 1, right = Arcade.ScannerLeft + Arcade.ScannerWidth;
+        HLine(CropX, CropX + Width - 1, Arcade.ScannerBottom + 1, frame);
+        VLine(left, Arcade.ScannerTop - 1, Arcade.ScannerBottom, frame);
+        VLine(right, Arcade.ScannerTop - 1, Arcade.ScannerBottom, frame);
+        HLine(left, right, Arcade.ScannerTop - 1, frame);
+
+        // Scanner contents.
+        foreach (var t in s.ScannerTerrain) { Plot(t.X, t.Y, _pal[t.Color]); Plot(t.X + 1, t.Y, _pal[t.Color]); }
+        foreach (var b in s.Scanner)
+        {
+            if (b.X < Arcade.ScannerLeft || b.X > right - 2) continue;
+            Plot(b.X, b.Y, _pal[b.Upper]); Plot(b.X + 1, b.Y, _pal[b.Upper]);
+            Plot(b.X, b.Y + 1, _pal[b.Lower]); Plot(b.X + 1, b.Y + 1, _pal[b.Lower]);
+        }
+        if (!attract && s.State != SessionState.EnterInitials)
+        {
+            uint w = _pal[Pal.White];
+            // Visible-window brackets and player blip.
+            foreach (int x in new[] { s.ScannerWindowLeft, s.ScannerWindowRight })
+            {
+                Plot(x, Arcade.ScannerTop, w); Plot(x, Arcade.ScannerTop + 1, w);
+                Plot(x, Arcade.ScannerBottom - 2, w); Plot(x, Arcade.ScannerBottom - 1, w);
+            }
+            HLine(s.ScannerWindowLeft, s.ScannerWindowLeft + 2, Arcade.ScannerTop, w);
+            HLine(s.ScannerWindowRight - 2, s.ScannerWindowRight, Arcade.ScannerTop, w);
+            HLine(s.ScannerWindowLeft, s.ScannerWindowLeft + 2, Arcade.ScannerBottom - 1, w);
+            HLine(s.ScannerWindowRight - 2, s.ScannerWindowRight, Arcade.ScannerBottom - 1, w);
+            if (s.PlayerVisible)
+            {
+                HLine(s.ScannerPlayerX - 1, s.ScannerPlayerX + 2, s.ScannerPlayerY, w);
+                Plot(s.ScannerPlayerX, s.ScannerPlayerY + 1, w);
+            }
+        }
+
+        // Player one panel: reserve ships, smart bombs, score (left of the scanner).
+        for (int i = 0; i < Math.Min(s.Lives, 5); i++) DrawSprite(Sprites.ShipIcon, 18 + i * 12, 10);
+        for (int i = 0; i < Math.Min(s.SmartBombs, 3); i++) DrawSprite(Sprites.BombIcon, 84, 16 + i * 5);
+        string score = s.Score > 0 || !attract ? s.Score.ToString() : "";
+        Text(score, 80 - PixelFont.Measure(score), 28, _pal[Pal.Yellow]);
+
+        // Right panel: high score / wave / mode.
+        Text("HIGH", 232, 10, _pal[Pal.Grey]);
+        Text(s.HighScore.ToString(), 232, 19, _pal[Pal.White]);
+        if (!attract) Text($"WAVE {s.Wave}", 232, 29, _pal[Pal.Grey]);
+        if (s.Mode == GameMode.Modern) Text(GameSpeed < 1 ? $"M {GameSpeed:0.##}X" : "MODERN", 270 - (GameSpeed < 1 ? 6 : 0), 29, _pal[Pal.Green]);
+    }
+
+    private void DrawWaveComplete(FrameSnapshot s)
+    {
+        uint w = _pal[Pal.White];
+        CenterText("ATTACK WAVE " + s.Wave, 80, w);
+        CenterText("COMPLETED", 92, w);
+        CenterText("BONUS X " + s.WaveBonusPerHumanoid, 112, w);
+        int n = s.HumanoidsBonusCounted;
+        int x0 = CropX + (Width - n * 8) / 2;
+        for (int i = 0; i < n; i++) DrawSprite(Sprites.Humanoid, x0 + i * 8, 128);
+    }
+
+    // ----- attract / initials ----------------------------------------------------------------------------
+
+    private void DrawAttract(FrameSnapshot s)
+    {
+        uint w = _pal[Pal.White], g = _pal[Pal.Grey];
+        int t = s.StateTimer;
+        CenterText(Branding.Title, 52, _pal[Pal.Laser], 3);
+        CenterText(Branding.Disclaimer, 78, g);
+
+        if ((t / 600) % 2 == 0)
+        {
+            // Scoring legend.
+            CenterText("SCORING", 96, w);
+            var rows = new (Sprite spr, string name, string pts)[]
+            {
+                (Sprites.Lander[(t / 12) % 3], "LANDER", "150"), (Sprites.Mutant, "MUTANT", "150"),
+                (Sprites.Baiter, "BAITER", "200"), (Sprites.Bomber, "BOMBER", "250"),
+                (Sprites.Pod, "POD", "1000"), (Sprites.Swarmer, "SWARMER", "150"),
+            };
+            for (int i = 0; i < rows.Length; i++)
+            {
+                int y = 110 + i * 14;
+                DrawSprite(rows[i].spr, 92, y);
+                Text(rows[i].name, 112, y + 1, g);
+                Text(rows[i].pts, 200 - PixelFont.Measure(rows[i].pts), y + 1, w);
+            }
+            DrawSprite(Sprites.Humanoid, 94, 196);
+            Text("HUMANOID CATCH 500  LAND 500", 112, 197, g);
+        }
+        else
+        {
+            CenterText("HALL OF FAME", 96, w);
+            var hs = HighScoreProvider?.Invoke() ?? [];
+            for (int i = 0; i < Math.Min(hs.Count, 10); i++)
+            {
+                string line = $"{i + 1,2} {hs[i].Initials} {hs[i].Score,7}";
+                Text(line, CropX + (Width - PixelFont.Measure(line)) / 2, 110 + i * 9, i == 0 ? _pal[Pal.Yellow] : g);
+            }
+            if (hs.Count == 0) CenterText("NO SCORES YET", 130, g);
+        }
+        if ((t / 30) % 2 == 0) CenterText("PRESS 1 OR F2 TO START", 214, _pal[Pal.Yellow]);
+        if (ShowControlHints) CenterText("F1 CONTROLS   F10 SETTINGS   F11 FULLSCREEN", 230, g);
+        if (StatusLine is { } st) Text(st, CropX + 2, CropY + Height - 8, _pal[Pal.Grey]);
+    }
+
+    private void DrawInitials(FrameSnapshot s)
+    {
+        uint w = _pal[Pal.White];
+        CenterText("PLAYER ONE", 60, _pal[Pal.Yellow]);
+        CenterText("YOU HAVE QUALIFIED FOR", 80, w);
+        CenterText("THE HALL OF FAME", 92, w);
+        CenterText("SCORE " + s.Score, 110, _pal[Pal.Laser]);
+        CenterText("UP/DOWN TO CHOOSE, FIRE TO ENTER", 130, _pal[Pal.Grey]);
+        CenterText("(OR TYPE THEM)", 140, _pal[Pal.Grey]);
+        int x0 = CropX + (Width - 3 * 18) / 2;
+        for (int i = 0; i < 3; i++)
+        {
+            uint c = i == s.InitialsCursor && (s.StateTimer / 8) % 2 == 0 ? _pal[Pal.Yellow] : w;
+            Text(s.Initials[i].ToString(), x0 + i * 18, 160, c, 2);
+            if (i == s.InitialsCursor) HLine(x0 + i * 18, x0 + i * 18 + 9, 176, _pal[Pal.Yellow]);
+        }
+    }
+}
