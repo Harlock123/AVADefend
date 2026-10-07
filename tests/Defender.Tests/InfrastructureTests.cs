@@ -17,7 +17,7 @@ public class AudioTests
             if (id == SoundId.Count) continue;
             var clip = SoundSynth.Render(id);
             Assert.NotEmpty(clip);
-            Assert.All(clip, s => Assert.True(float.IsFinite(s) && Math.Abs(s) <= 2f));
+            Assert.All(clip, s => Assert.True(float.IsFinite(s) && Math.Abs(s) <= SoundSynth.MaxPeak + 1e-6f));
         }
     }
 
@@ -168,4 +168,26 @@ public class HighScoreTableTests
     [InlineData("a1b2c3d", "ABC")]
     [InlineData(null, "   ")]
     public void InitialsAreNormalised(string? input, string expected) => Assert.Equal(expected, HighScoreTable.NormalizeInitials(input));
+}
+
+public class WavExportTests
+{
+    [Fact]
+    public void ExportsOneValidWavPerSound()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "defender-wav-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var files = WavExport.ExportAll(dir);
+            Assert.Equal((int)SoundId.Count, files.Count);
+            foreach (var f in files)
+            {
+                var bytes = File.ReadAllBytes(f);
+                Assert.Equal("RIFF", System.Text.Encoding.ASCII.GetString(bytes, 0, 4));
+                Assert.Equal(bytes.Length - 8, BitConverter.ToInt32(bytes, 4));
+                Assert.True(bytes.Length > 1000);
+            }
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
 }

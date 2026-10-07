@@ -18,7 +18,19 @@ public static class SoundSynth
         return clips;
     }
 
-    public static float[] Render(SoundId id) => id switch
+    /// <summary>Renders one effect, normalised so its peak never exceeds <see cref="MaxPeak"/> (no hard clipping).</summary>
+    public static float[] Render(SoundId id)
+    {
+        var clip = RenderRaw(id);
+        float peak = 0;
+        foreach (float v in clip) peak = Math.Max(peak, Math.Abs(v));
+        if (peak > MaxPeak) for (int i = 0; i < clip.Length; i++) clip[i] *= MaxPeak / peak;
+        return clip;
+    }
+
+    public const float MaxPeak = 0.9f;
+
+    private static float[] RenderRaw(SoundId id) => id switch
     {
         SoundId.Thrust => ThrustLoop(),
         SoundId.Fire => Sweep(0.16, 2400, 400, Square, 0.35, decay: 2),
@@ -30,8 +42,8 @@ public static class SoundSynth
         SoundId.HumanoidLanded => Arpeggio([1047, 1319, 1568], 0.05, 0.3),
         SoundId.HumanoidDies => Sweep(0.7, 2200, 200, Square, 0.3, vibratoHz: 25),
         SoundId.MutantCreated => Warble(0.6, 120, 1500, 60, 0.3),
-        SoundId.EnemyExplode => Noise(0.45, 0.6, cutoffStart: 0.9, cutoffEnd: 0.05, seed: 11),
-        SoundId.PodExplode => Noise(0.7, 0.7, cutoffStart: 0.7, cutoffEnd: 0.03, seed: 12),
+        SoundId.EnemyExplode => Noise(0.45, 0.8, cutoffStart: 0.9, cutoffEnd: 0.05, seed: 11),
+        SoundId.PodExplode => Noise(0.7, 0.9, cutoffStart: 0.7, cutoffEnd: 0.03, seed: 12),
         SoundId.BaiterAppear => Warble(0.5, 900, 1200, 40, 0.2),
         SoundId.PlayerExplode => Mix(Noise(2.2, 0.8, 0.8, 0.01, seed: 13), Sweep(2.2, 220, 30, Square, 0.3, decay: 1.5)),
         SoundId.SmartBomb => Mix(Noise(1.3, 0.9, 1.0, 0.02, seed: 14), Sweep(1.3, 120, 40, Sine, 0.5, decay: 1.5)),

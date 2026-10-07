@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 138 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 139 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -121,6 +121,8 @@ A line-by-line comparison against the original routines found 18 discrepancies. 
 | Gamepad path tested end-to-end with an SDL virtual controller (hot-plug, mapping, deadzone, steering, rebinding detection) | Tested |
 | Smart bomb vs materialising enemies resolved from source (immune); appear effect now only on screen | Impl, Tested |
 | Wave-bonus screen timing from source (4 frames per humanoid, 128-frame hold, cleared screen); 128-piece death explosion | Impl, Tested |
+| `--export-sounds` WAV export; peak limiter (removed hard clipping in 3 effects); explosion levels raised | Impl, Tested; levels measured, not listened to |
+| macOS osx-arm64 framework-dependent publish | Builds; not run; unsigned |
 
 ## Next concrete tasks
 

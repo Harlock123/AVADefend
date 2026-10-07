@@ -39,7 +39,7 @@ It has two presets, **Classic** and **Modern**. Both use the same rules. Modern 
 
 ```bash
 dotnet build Defender.slnx                      # Debug build of all projects
-dotnet test Defender.slnx                       # 138 tests (engine, persistence, audio mixer, headless Avalonia UI)
+dotnet test Defender.slnx                       # 139 tests (engine, persistence, audio mixer, headless Avalonia UI)
 dotnet run --project src/Defender.Avalonia      # play
 ```
 
@@ -48,6 +48,7 @@ Diagnostic flags:
 ```bash
 dotnet run --project src/Defender.Avalonia -- --autoplay      # a scripted pilot plays (for screenshots and soak runs)
 dotnet run --project src/Defender.Avalonia -- --audio-probe   # report the SDL audio status and play every sound, no window
+dotnet run --project src/Defender.Avalonia -- --export-sounds sounds/   # write every effect as a WAV file to audition
 ```
 
 In the game:
@@ -69,7 +70,8 @@ dotnet publish src/Defender.Avalonia -c Release -r win-x64 --self-contained true
 # Linux, self-contained (linux-arm64 has been run; linux-x64 is the same command, untested)
 dotnet publish src/Defender.Avalonia -c Release -r linux-arm64 --self-contained true -o publish/linux-arm64
 
-# Framework-dependent, for any RID (needs the .NET 10 runtime installed)
+# Framework-dependent, for any RID (needs the .NET 10 runtime installed).
+# osx-arm64 builds and bundles its native libraries; it has not been run and is unsigned (Gatekeeper will block it).
 dotnet publish src/Defender.Avalonia -c Release -r osx-arm64 --self-contained false -o publish/osx-arm64
 ```
 

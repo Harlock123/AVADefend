@@ -10,6 +10,13 @@ internal static class Program
     public static int Main(string[] args)
     {
         if (args.Contains("--audio-probe")) return AudioProbe();
+        int ex = Array.IndexOf(args, "--export-sounds");
+        if (ex >= 0)
+        {
+            var dir = ex + 1 < args.Length ? args[ex + 1] : "sounds";
+            foreach (var f in WavExport.ExportAll(dir)) Console.WriteLine(f);
+            return 0;
+        }
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
     }
