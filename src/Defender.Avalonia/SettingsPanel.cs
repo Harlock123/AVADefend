@@ -65,7 +65,7 @@ public sealed class SettingsPanel : Border
         double[] speeds = [1.0, 0.85, 0.7, 0.5];
         speed.SelectedIndex = Math.Max(0, Array.IndexOf(speeds, s.GameSpeed));
         speed.SelectionChanged += (_, _) => s.GameSpeed = speeds[Math.Max(0, speed.SelectedIndex)];
-        Labeled("Game speed (accessibility; shown on HUD)", speed);
+        Labeled("Game speed (shown on HUD)", speed);
 
         Header("Gamepad");
         Note(_host.Gamepad?.Status ?? "Gamepad support disabled");
@@ -123,7 +123,7 @@ public sealed class SettingsPanel : Border
 
     private void Slider(string label, double value, Action<double> set, double min = 0, double max = 1)
     {
-        var sl = new Slider { Minimum = min, Maximum = max, Value = value, Width = 260 };
+        var sl = new Slider { Minimum = min, Maximum = max, Value = value, Width = 220, HorizontalAlignment = HorizontalAlignment.Left };
         sl.PropertyChanged += (_, e) => { if (e.Property == RangeBase.ValueProperty) set(sl.Value); };
         Labeled(label, sl);
     }
@@ -131,6 +131,6 @@ public sealed class SettingsPanel : Border
     private void Labeled(string label, Control c) =>
         _root.Children.Add(new DockPanel
         {
-            Children = { new TextBlock { Text = label, Width = 300, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White }, c },
+            Children = { new TextBlock { Text = label, Width = 250, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White }, c },
         });
 }

@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using Defender.Avalonia;
 using Defender.Avalonia.Rendering;
 using Defender.Core.Simulation;
@@ -95,6 +96,34 @@ public class UiSmokeTests : IDisposable
         }
         Assert.Contains(SessionState.Playing, seen);
         Assert.Contains(SessionState.Dying, seen);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_dir)) Directory.Delete(_dir, true);
+    }
+}
+
+public class SettingsUiTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "defender-settings-" + Guid.NewGuid().ToString("N"));
+
+    [AvaloniaFact]
+    public void F10_OpensSettings_EscClosesAndPersists()
+    {
+        var host = new GameHost(_dir, new NullSoundEngine(), enableGamepad: false);
+        var w = new MainWindow(host) { Width = 900, Height = 760 };
+        w.Show();
+        w.KeyPress(Key.F10, RawInputModifiers.None, PhysicalKey.F10, null);
+        var panel = w.GetVisualDescendants().OfType<SettingsPanel>().Single();
+        Assert.True(panel.IsVisible);
+        var frame = w.CaptureRenderedFrame();
+        var shot = Environment.GetEnvironmentVariable("DEFENDER_SETTINGS_SHOT");
+        if (frame is not null && shot is not null) frame.Save(shot);
+        w.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Assert.False(panel.IsVisible);
+        Assert.True(File.Exists(Path.Combine(_dir, "settings.json")));
+        w.Close();
     }
 
     public void Dispose()

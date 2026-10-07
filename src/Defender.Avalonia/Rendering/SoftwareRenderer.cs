@@ -235,7 +235,7 @@ public sealed class SoftwareRenderer
         }
         if ((t / 30) % 2 == 0) CenterText("PRESS 1 OR F2 TO START", 214, _pal[Pal.Yellow]);
         if (ShowControlHints) CenterText("F1 CONTROLS   F10 SETTINGS   F11 FULLSCREEN", 230, g);
-        if (StatusLine is { } st) Text(st, CropX + 2, CropY + Height - 8, _pal[Pal.Grey]);
+        if (StatusLine is { } st) Text(st.Length > 48 ? st[..48] : st, CropX + 2, Arcade.ScannerBottom + 4, _pal[Pal.Grey]);
     }
 
     private void DrawInitials(FrameSnapshot s)
