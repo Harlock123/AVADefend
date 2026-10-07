@@ -243,7 +243,7 @@ public sealed partial class GameSession
         if (StateTimer == DeathGlowFrames)
         {
             if (!Policy.SuppressFlashes) FlashFrames = 2;
-            SpawnExplosion(Player.WorldX(CameraX), Player.Y, 96, Pal.White, speed: 3);
+            SpawnExplosion(Player.WorldX(CameraX), Player.Y, 128, Pal.White, speed: 3); // 128 pieces (PLEX, blk71.src:566-672)
         }
         UpdateParticles();
         if (StateTimer < DeathTotalFrames) return;
@@ -368,16 +368,16 @@ public sealed partial class GameSession
 
     private void StepWaveComplete()
     {
-        // Count surviving humanoids one at a time, then pause, then the next wave (defa7.src:1800-1840).
+        // BONUS (defa7.src:1786-1845): screen cleared, one humanoid counted every 4 frames, then 128 frames.
         int alive = HumanoidsAlive;
-        if (StateTimer >= 60 && StateTimer % 8 == 0 && _bonusCounted < alive)
+        if (StateTimer % 4 == 1 && _bonusCounted < alive)
         {
             _bonusCounted++;
             AddScore(WaveBonusPerHumanoid);
             WaveBonusAwarded += WaveBonusPerHumanoid;
             _sounds.Add(SoundId.WaveBonus);
         }
-        if (StateTimer < 60 + alive * 8 + 150) return;
+        if (StateTimer < alive * 4 + 128) return;
         Wave++;
         if (Rules.RestoreWave > 0 && Wave % Rules.RestoreWave == 0)
         {

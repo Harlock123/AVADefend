@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 135 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 138 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -71,7 +71,7 @@ Updated 2026-10-07.
 | Feature | Status |
 |---|---|
 | Settings panel (preset, audio, display, accessibility, keyboard remapping) | Impl, Tested (F10 opens, Esc closes and saves); layout observed in a headless render |
-| Gamepad through SDL, with hot-plug, deadzone and stick steering | Impl, **Untested** (no hardware) |
+| Gamepad through SDL, with hot-plug, deadzone and stick steering | Impl, Tested with an SDL virtual controller; no physical hardware |
 | Suspend/resume (Modern) | Impl, Tested: equivalent after a JSON round-trip |
 | Flash and colour-cycle suppression, reduced motion | Impl |
 | Game speed | Impl; shown on the HUD |
@@ -114,9 +114,17 @@ Updated 2026-10-07.
 
 A line-by-line comparison against the original routines found 18 discrepancies. All are fixed, each with a regression test (`AuditRegressionTests`). Highlights: walking humanoids can be shot; mutants shoot from their avoid branch and their seek window was mirrored; landers shoot while descending and lifting; humanoids are re-placed every life; enemies keep moving during the death glow; mines only appear and live on screen; wave speeds never carry across a byte; the 2-player turn-over message and life-start timings. Status: Impl, Tested, gameplay Observed via autoplay.
 
+## Round 5
+
+| Item | Status |
+|---|---|
+| Gamepad path tested end-to-end with an SDL virtual controller (hot-plug, mapping, deadzone, steering, rebinding detection) | Tested |
+| Smart bomb vs materialising enemies resolved from source (immune); appear effect now only on screen | Impl, Tested |
+| Wave-bonus screen timing from source (4 frames per humanoid, 128-frame hold, cleared screen); 128-piece death explosion | Impl, Tested |
+
 ## Next concrete tasks
 
 1. Run the win-x64 build on Windows: smoke test, audio, gamepad.
 2. Compare against MAME recordings: lander timing, the baiter's first appearance, the reverse slide.
 3. Push to GitHub so the CI workflow (`.github/workflows/ci.yml`, written but never run) builds and tests on Windows, Linux and macOS.
-4. Test with a real gamepad: hot-plug, deadzone, rebinding.
+4. Test with a real gamepad (vendor mappings and feel; the code path itself is now tested virtually).

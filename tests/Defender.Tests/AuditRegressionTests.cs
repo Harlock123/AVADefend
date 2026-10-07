@@ -268,4 +268,20 @@ public class AuditRegressionTests
         }
         Assert.Fail("no seed produced an on-screen spawn");
     }
+
+    [Fact] // BONUS timing
+    public void WaveBonusScreen_Counts1Per4Frames_ThenHolds128()
+    {
+        var s = TestUtil.NewPlaying();
+        s.TestCompleteWaveNow();
+        int frames = 0;
+        while (s.State == SessionState.WaveComplete) { s.Step(default); frames++; }
+        Assert.Equal(10 * 4 + 128, frames);
+        Assert.Equal(1000, s.Score);
+        var snap = new FrameSnapshot();
+        s.TestCompleteWaveNow();
+        s.Step(default);
+        s.BuildSnapshot(snap);
+        Assert.All(snap.TerrainY, y => Assert.Equal(-1, y));   // screen cleared
+    }
 }

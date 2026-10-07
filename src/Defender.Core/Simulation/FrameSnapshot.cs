@@ -104,10 +104,10 @@ public sealed partial class GameSession
         s.PlayerVisible = inPlay && State != SessionState.WaveComplete && !dyingHidden && !s.HyperspaceBlank;
 
         for (int x = 0; x < Arcade.ScreenWidth; x++)
-            s.TerrainY[x] = inPlay && PlanetActive && !s.HyperspaceBlank ? Terrain.HeightAtUnits(CameraX + x * Arcade.UnitsPerPixel) : -1;
+            s.TerrainY[x] = inPlay && PlanetActive && !s.HyperspaceBlank && State != SessionState.WaveComplete ? Terrain.HeightAtUnits(CameraX + x * Arcade.UnitsPerPixel) : -1;
 
         s.Stars.Clear();
-        if (inPlay && !s.HyperspaceBlank)
+        if (inPlay && !s.HyperspaceBlank && State != SessionState.WaveComplete)
             foreach (var st in Stars) s.Stars.Add(new PointDraw(st.X, st.Y, st.Color));
 
         s.Sprites.Clear();

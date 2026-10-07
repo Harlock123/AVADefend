@@ -118,6 +118,8 @@ After the first implementation we ran a line-by-line comparison of our engine ag
 | Mutant seek window | `player − mutant` within −380..+1412 units (≈ −12..+44 px) (defb6.src:855-858). |
 | Bomber squad layout | Members $180 units apart at player X + $8000, Y = cruise altitude = $50, no materialise; nudge −32..+31 (defb6.src:977-1116). |
 | Death and restart (PLSAV/PLRES) | Counts are saved at the hit. Swarmers, mutants, pods and bombers are re-created at the next life; landers stay in reserve; humanoids are re-placed every life (defa7.src:1491-1585). |
+| Smart bomb vs materialising enemies | **Immune.** `APST` sets OTYP bit 1 while an enemy appears, and `SBOMB` skips OTYP ≥ 2. The appear effect also runs only for objects on screen; off-screen spawns are immediate (samexap7.src). |
+| Wave-bonus screen | Screen cleared; one humanoid counted every 4 frames; then 128 frames (defa7.src:1786-1845). |
 | Death timing | 32-frame glow during which enemies keep moving; 2 white frames; ~108 explosion frames; then (2-player only) "PLAYER n" for 128 frames and a 96-frame pause. |
 
 ## Open questions
@@ -125,6 +127,5 @@ After the first implementation we ran a line-by-line comparison of our engine ag
 These are also tracked in KNOWN_ISSUES.md.
 
 1. **Random-number generator.** The exact RNG (a 3-byte LFSR) is not replicated. We use xorshift32. This matters only for byte-exact replay against MAME.
-2. **Smart bomb vs materialising enemies.** Whether the bomb hits enemies that are still materialising is unresolved. Ours: they are immune.
-3. **Bomber off-screen altitude correction.** As written, it pushes bombers *away* from their cruise altitude, so they drift and wrap vertically. We implement it as written; it may be an original quirk.
-4. **Attract-mode demo.** The original attract-mode demo flight was not studied.
+2. **Bomber off-screen altitude correction.** As written, it pushes bombers *away* from their cruise altitude, so they drift and wrap vertically. We implement it as written; it may be an original quirk.
+3. **Attract-mode demo.** The original attract-mode demo flight was not studied.
