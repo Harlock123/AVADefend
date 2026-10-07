@@ -67,6 +67,7 @@ public sealed class GameView : Control
     {
         var s = Host.Settings;
         Renderer.ShowControlHints = s.ShowControlHints;
+        Renderer.BoldScanner = s.BoldScanner;
         Renderer.GameSpeed = Host.Scheduler.TimeScale;
         Renderer.StatusLine = Host.Messages.LastOrDefault();
         Renderer.Render(Host.Snapshot);

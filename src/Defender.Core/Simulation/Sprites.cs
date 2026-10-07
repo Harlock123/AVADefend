@@ -113,6 +113,6 @@ public static class Sprites
     public static readonly Sprite ShipIcon = new("shipicon", "C66.......", "C66999999.", ".6699999..", "..66......");
     public static readonly Sprite BombIcon = new("bombicon", ".22222", "222222", ".22222");
 
-    /// <summary>Collision probe used by the laser head: 8x1 (LASP1 "8,1" bytes, tested on the head segment).</summary>
-    public const int LaserProbeWidth = 8;
+    /// <summary>Laser collision probe LASP1: 8 bytes × 1 row = 16×1 px (see GameSession.UpdateLasers).</summary>
+    public const int LaserProbeWidth = 16;
 }

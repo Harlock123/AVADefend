@@ -26,6 +26,7 @@ public sealed class SoftwareRenderer
     public bool ShowControlHints { get; set; } = true;
     public string? StatusLine { get; set; }
     public double GameSpeed { get; set; } = 1;
+    public bool BoldScanner { get; set; }
     public Func<Core.Scoring.HighScoreBook?>? HighScoreProvider { get; set; }
 
     public uint Argb(byte paletteByte) => _byteToArgb[paletteByte];
@@ -152,6 +153,15 @@ public sealed class SoftwareRenderer
         foreach (var b in s.Scanner)
         {
             if (b.X < Arcade.ScannerLeft || b.X > right - 2) continue;
+            if (BoldScanner && s.Mode == GameMode.Modern)
+            {
+                // Modern readability option: 3x3 blips (upper colour on top two rows).
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = 0; dx <= 2; dx++)
+                        if (b.X + dx < right && b.Y + dy > Arcade.ScannerTop - 1)
+                            Plot(b.X + dx, b.Y + dy, _pal[dy < 1 ? b.Upper : b.Lower]);
+                continue;
+            }
             Plot(b.X, b.Y, _pal[b.Upper]); Plot(b.X + 1, b.Y, _pal[b.Upper]);
             Plot(b.X, b.Y + 1, _pal[b.Lower]); Plot(b.X + 1, b.Y + 1, _pal[b.Lower]);
         }

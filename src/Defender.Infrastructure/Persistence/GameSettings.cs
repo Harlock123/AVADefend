@@ -29,6 +29,9 @@ public sealed class GameSettings : IVersioned
     /// <summary>Cocktail-table presentation: the picture rotates 180° while player two is up (both presets).</summary>
     public bool CocktailFlip { get; set; }
 
+    /// <summary>Modern only: draw scanner blips 3×3 for readability on large displays.</summary>
+    public bool BoldScanner { get; set; }
+
     /// <summary>Modern only: which suspend slot (1-3) is written on close and resumed.</summary>
     public int SuspendSlot { get; set; } = 1;
 

@@ -4,6 +4,7 @@
     <RootNamespace>Defender.Avalonia</RootNamespace>
     <AssemblyName>Defender</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/defender.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
@@ -17,6 +18,9 @@
     <PackageReference Include="Avalonia.Skia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="SkiaSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/defender-256.png" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Defender.Tests" />

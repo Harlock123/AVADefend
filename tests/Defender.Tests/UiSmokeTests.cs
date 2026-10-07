@@ -37,6 +37,7 @@ public class UiSmokeTests : IDisposable
         Assert.NotNull(frame);
         Assert.True(w.View.FramesPresented >= 5);
         Assert.Contains(w.View.Renderer.Pixels, p => p != 0xFF000000u); // something besides black was drawn
+        Assert.NotNull(w.Icon);                                           // embedded icon resource loads
         w.Close();
     }
 

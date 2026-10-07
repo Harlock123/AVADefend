@@ -284,4 +284,28 @@ public class AuditRegressionTests
         s.BuildSnapshot(snap);
         Assert.All(snap.TerrainY, y => Assert.Equal(-1, y));   // screen cleared
     }
+
+    [Theory] // LCOL probe geometry
+    [InlineData(1, -12, true)]    // right-facing: probe reaches 12 px behind the head
+    [InlineData(1, 4, false)]     // ...but not 4 px ahead of it
+    [InlineData(-1, 15, true)]    // left-facing: probe spans 16 px from the head toward the ship
+    [InlineData(-1, -2, false)]
+    public void LaserProbe_Is16x1_PlacedPerDirection(int dir, int offsetFromHead, bool hits)
+    {
+        var s = TestUtil.NewPlaying();
+        if (dir < 0) { s.Step(new PlayerInput { ReversePressed = true }); s.Run(100); }
+        s.Step(new PlayerInput { FirePressed = true });
+        var l = s.Lasers.Single();
+        int nextHead = l.Head + dir * 8 * 3;              // where the head will be after 3 more frames
+        s.Run(2);
+        // A 1-px-wide target exactly on the laser row: use a mine-free mutant sprite column via a pod placed so
+        // that only its leftmost solid column sits at the probe position.
+        var pod = s.TestSpawn(EnemyKind.Pod, 0, l.Y - 3);   // pod row 3 is fully solid ("88822888")
+        pod.Vx = pod.Vy = 0; pod.Nap = 10000;
+        int targetPx = nextHead + offsetFromHead;
+        pod.X = (s.CameraX + targetPx * 32) & 0xFFFF;       // pod's leftmost column at targetPx
+        if (dir < 0) pod.X = (s.CameraX + (targetPx - 7) * 32) & 0xFFFF; // rightmost column at targetPx
+        s.Step(default);
+        Assert.Equal(hits, pod.Dead);
+    }
 }

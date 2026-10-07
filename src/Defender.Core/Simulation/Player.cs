@@ -148,17 +148,19 @@ public sealed partial class GameSession
         return true;
     }
 
+    private const int LaserProbeWidthPx = 16;
+
     private void UpdateLasers()
     {
         foreach (var l in Lasers)
         {
             if (l.Done) continue;
-            int prev = l.Head;
             l.Head += l.Dir * Arcade.LaserHeadPxPerFrame;
             l.Fizzle += l.Dir * Arcade.LaserFizzlePxPerFrame;
             l.Tail += l.Dir * Arcade.LaserTailPxPerFrame;
-            int x0 = Math.Min(prev, l.Head), x1 = Math.Max(prev, l.Head) + 1;
-            if (LaserHit(x0, x1, l.Y, l.Dir)) { l.Done = true; continue; }
+            // LCOL tests the 16x1 probe LASP1 (8 bytes): 6 columns behind the head going right, at the head going left.
+            int x0 = l.Dir > 0 ? l.Head - 12 : l.Head;
+            if (LaserHit(x0, x0 + LaserProbeWidthPx, l.Y, l.Dir)) { l.Done = true; continue; }
             if (l.Head >= Arcade.ScreenWidth || l.Head <= 10) l.Done = true;
         }
     }

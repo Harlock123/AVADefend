@@ -65,6 +65,7 @@ public sealed class SettingsPanel : Border
 
         Header("Modern preset only");
         Check("Smooth (bilinear) scaling", s.SmoothScaling, v => s.SmoothScaling = v);
+        Check("Bold scanner blips (easier to read on large displays)", s.BoldScanner, v => s.BoldScanner = v);
         Check("Suppress flashes and fast colour cycling", s.FlickerSuppression, v => s.FlickerSuppression = v);
         Check("Reduced motion (no full-screen flashes)", s.ReducedMotion, v => s.ReducedMotion = v);
         Check("Hold fire to repeat (rate-limited; original is one shot per press)", s.HoldToFire, v => s.HoldToFire = v);
