@@ -24,7 +24,7 @@ No standard keyboard or gamepad layout matches this exactly. The defaults below 
 | Start 2-player game | 2, F3 | Players alternate on each death |
 | Pause | Esc, P | |
 | Controls overlay | F1 | |
-| Settings / remap | F10 | |
+| Settings / remap | F10 or F9 | F9 is an alternative because F10 is a menu key on Windows |
 | Fullscreen (borderless) | F11 | |
 
 ### Why this layout

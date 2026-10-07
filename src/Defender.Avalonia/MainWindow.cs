@@ -71,7 +71,7 @@ public sealed class MainWindow : Window
         {
             if (e.Key == Key.Escape && _settings.TryCancelPadCapture()) { e.Handled = true; return; }
             if (_settings.TryCaptureKey(KeyName(e.Key))) { e.Handled = true; return; }
-            if (e.Key is Key.Escape or Key.F10) { CloseSettings(); e.Handled = true; }
+            if (e.Key is Key.Escape or Key.F10 or Key.F9) { CloseSettings(); e.Handled = true; }
             return;
         }
         switch (e.Key)
@@ -80,7 +80,7 @@ public sealed class MainWindow : Window
             case Key.F1:
                 if (_help.Child is TextBlock t) t.Text = ControlsHelp.Text(_host.Settings.Bindings); // reflect rebinding
                 _help.IsVisible = !_help.IsVisible; e.Handled = true; return;
-            case Key.F10: OpenSettings(); e.Handled = true; return;
+            case Key.F10 or Key.F9: OpenSettings(); e.Handled = true; return; // F9 too: F10 is a Windows menu key
         }
         if (_help.IsVisible && e.Key == Key.Escape) { _help.IsVisible = false; e.Handled = true; return; }
         // Initials can be typed directly; letters must not also act as game buttons there.

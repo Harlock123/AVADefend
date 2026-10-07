@@ -43,7 +43,7 @@ public sealed class SettingsPanel : Border
         _root.Children.Clear();
         _capturing = null;
         StopPadCapture();
-        Header("SETTINGS  (Esc / F10 to close)");
+        Header("SETTINGS  (Esc / F10 / F9 to close)");
 
         Header("Preset");
         var mode = new ComboBox { ItemsSource = new[] { "Classic (1981 arcade rules)", "Modern (same rules + conveniences)" }, SelectedIndex = s.Mode == GameMode.Modern ? 1 : 0, IsEnabled = _host.CanChangeMode };
