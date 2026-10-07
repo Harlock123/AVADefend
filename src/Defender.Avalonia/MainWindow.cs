@@ -48,10 +48,12 @@ public sealed class MainWindow : Window
         Deactivated += (_, _) =>
         {
             _host.ReleaseAllKeys();
-            // Modern: auto-pause when the window loses focus (suspend). Classic keeps running like a cabinet.
-            if (_host.Settings.Mode == GameMode.Modern && _host.Session.State == SessionState.Playing && !_host.Session.Paused)
-                _host.Session.Step(new Core.Input.PlayerInput { PausePressed = true });
+            // Modern: auto-pause when the window loses focus. Classic keeps running like a cabinet.
+            if (_host.Settings.Mode != GameMode.Modern) return;
+            if (_host.Session.State is SessionState.Playing or SessionState.LifeStart) _host.Session.SetPaused(true);
+            else if (_host.Session.State is not (SessionState.Attract or SessionState.EnterInitials)) _host.FocusHold = true;
         };
+        Activated += (_, _) => _host.FocusHold = false;
         Opened += (_, _) => _view.Focus();
         Closing += (_, _) => { _host.SuspendIfPlaying(); _host.SaveSettings(); _host.Dispose(); };
     }
@@ -103,11 +105,11 @@ public sealed class MainWindow : Window
     private void OpenSettings()
     {
         _host.ReleaseAllKeys();
-        if (_host.Session.State == SessionState.Playing && !_host.Session.Paused)
-            _host.Session.Step(new Core.Input.PlayerInput { PausePressed = true });
+        _host.SettingsOpen = true;   // freezes the game in any state; pad presses are discarded
         _settings.Refresh();
         _settings.IsVisible = true;
     }
+
 
     /// <summary>Modern: a one-line control reminder below the picture (never drawn over the game).</summary>
     private void RefreshHintBar()
@@ -123,6 +125,7 @@ public sealed class MainWindow : Window
     private void CloseSettings()
     {
         _settings.IsVisible = false;
+        _host.SettingsOpen = false;
         _host.ApplySettings();
         _host.SaveSettings();
         _host.TryResume();

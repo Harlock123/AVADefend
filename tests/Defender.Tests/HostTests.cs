@@ -55,6 +55,29 @@ public class HostTests : IDisposable
         Assert.False(Directory.Exists(_dir) && Directory.GetFiles(_dir, "suspend-*.json").Length > 0);
     }
 
+    [Fact]
+    public void SettingsOpen_FreezesAnyState_AndDiscardsPressesMadeMeanwhile()
+    {
+        var h = NewHost();
+        h.SettingsOpen = true;
+        h.KeyDown("D1");                       // e.g. a pad "start" pressed while rebinding
+        for (int i = 0; i < 5; i++) h.Frame(TimeSpan.FromMilliseconds(17));
+        h.KeyUp("D1");
+        Assert.Equal(SessionState.Attract, h.Session.State);
+        h.SettingsOpen = false;
+        for (int i = 0; i < 5; i++) h.Frame(TimeSpan.FromMilliseconds(17));
+        Assert.Equal(SessionState.Attract, h.Session.State); // the press was dropped, not replayed
+
+        h.Session.StartGame();
+        long f = h.Session.Frame;
+        h.FocusHold = true;                    // e.g. Modern focus loss while dying
+        for (int i = 0; i < 10; i++) h.Frame(TimeSpan.FromMilliseconds(17));
+        Assert.Equal(f, h.Session.Frame);
+        h.FocusHold = false;
+        h.Frame(TimeSpan.FromMilliseconds(17)); h.Frame(TimeSpan.FromMilliseconds(17));
+        Assert.True(h.Session.Frame > f);
+    }
+
     [AvaloniaFact]
     public void HintBar_ShownOnlyInModern()
     {

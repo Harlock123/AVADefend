@@ -138,6 +138,12 @@ public sealed class GameHost : IDisposable
 
     public bool CanChangeMode => Session.State == SessionState.Attract;
 
+    /// <summary>Settings panel open: the simulation is frozen and device input is discarded (pads are still polled for rebinding).</summary>
+    public bool SettingsOpen { get; set; }
+    /// <summary>Modern focus loss during a state that cannot be paused (dying, turn-over, bonus): hold until refocused.</summary>
+    public bool FocusHold { get; set; }
+    public bool Frozen => SettingsOpen || FocusHold;
+
     public void KeyDown(string key) { _heldKeys.Add(key); SampleDevices(); }
     public void KeyUp(string key) { _heldKeys.Remove(key); SampleDevices(); }
     public void ReleaseAllKeys() { _heldKeys.Clear(); SampleDevices(); }
@@ -161,6 +167,14 @@ public sealed class GameHost : IDisposable
     public void Frame(TimeSpan elapsed)
     {
         SampleDevices();
+        if (Frozen)
+        {
+            _edges.Consume(Session.Player.Facing);   // discard presses made while frozen
+            Scheduler.Reset();
+            Audio.SetLooping(SoundId.Thrust, false);
+            Session.BuildSnapshot(Snapshot);
+            return;
+        }
         int ticks = Scheduler.Advance(elapsed);
         for (int i = 0; i < ticks; i++)
         {
