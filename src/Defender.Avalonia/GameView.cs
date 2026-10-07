@@ -56,6 +56,12 @@ public sealed class GameView : Control
             Host.Frame(dt);
             RenderFrame();
         }
+        catch (Exception ex)
+        {
+            // Never let one bad frame take the whole app down; surface it instead.
+            System.Diagnostics.Trace.TraceError(ex.ToString());
+            Host.Messages.Add("INTERNAL ERROR: " + ex.GetType().Name);
+        }
         finally
         {
             TopLevel.GetTopLevel(this)?.RequestAnimationFrame(OnFrame);

@@ -73,17 +73,18 @@ public sealed class Mixer
     {
         lock (_lock)
         {
-            var existing = _voices.FirstOrDefault(x => x.Active && x.Loop && x.Id == id && x.FadeOut < 0);
+            var existing = _voices.FirstOrDefault(x => x.Active && x.Loop && x.Id == id);
             if (on)
             {
-                if (existing is not null) return;
+                if (existing is not null) { existing.FadeOut = -1; return; } // revive a loop that was fading out
                 var clip = _clips[(int)id];
                 if (clip.Length == 0) return;
                 var v = _voices.FirstOrDefault(x => !x.Active)
-                        ?? _voices.Where(x => !x.Loop).OrderBy(x => x.Priority).ThenBy(x => x.Started).First();
+                        ?? _voices.Where(x => !x.Loop).OrderBy(x => x.Priority).ThenBy(x => x.Started).FirstOrDefault();
+                if (v is null) return;   // every voice is a loop: drop rather than throw
                 Start(v, id, clip, PriorityOf(id), loop: true);
             }
-            else if (existing is not null)
+            else if (existing is not null && existing.FadeOut < 0)
             {
                 existing.FadeOut = FadeSamples;
             }
@@ -107,7 +108,7 @@ public sealed class Mixer
         output.Clear();
         lock (_lock)
         {
-            if (Muted) return;
+            // Voices advance even when muted (so loops finish fading and one-shots play out silently).
             foreach (var v in _voices)
             {
                 if (!v.Active) continue;
@@ -131,6 +132,7 @@ public sealed class Mixer
                 }
             }
         }
+        if (Muted) { output.Clear(); return; }
         // Soft clip so dense explosions saturate musically instead of wrapping.
         for (int i = 0; i < output.Length; i++)
         {

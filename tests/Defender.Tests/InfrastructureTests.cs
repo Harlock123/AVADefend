@@ -191,3 +191,31 @@ public class WavExportTests
         finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
     }
 }
+
+public class MixerMuteRegressionTests
+{
+    [Fact]
+    public void TogglingThrustWhileMuted_NeverExhaustsVoicesOrThrows()
+    {
+        var m = new Mixer(SoundSynth.RenderAll()) { Muted = true };
+        var buf = new float[735]; // one 60 Hz frame
+        for (int press = 0; press < 100; press++)
+        {
+            m.SetLooping(SoundId.Thrust, true);
+            m.Mix(buf);
+            m.SetLooping(SoundId.Thrust, false);
+            for (int f = 0; f < 3; f++) m.Mix(buf);
+        }
+        Assert.InRange(m.ActiveVoices, 0, 1);
+    }
+
+    [Fact]
+    public void OneShots_DoNotFreezeWhileMuted()
+    {
+        var m = new Mixer(SoundSynth.RenderAll()) { Muted = true };
+        m.Play(SoundId.Fire);
+        m.Mix(new float[44100]);
+        m.Muted = false;
+        Assert.Equal(0, m.ActiveVoices); // it played out silently instead of resuming on unmute
+    }
+}
