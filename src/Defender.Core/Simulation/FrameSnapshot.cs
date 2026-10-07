@@ -77,10 +77,12 @@ public sealed partial class GameSession
                 int wx = ScannerLeftWorld + (c << 10);
                 _scannerTerrain.Add(new PointDraw(Arcade.ScannerLeft + c * 2, ScanY(Terrain.HeightAtUnits(wx)), Pal.Brown));
             }
-        _scanPlayerX = ScanX(PlayerWorldX);
-        _scanPlayerY = ScanY(Player.PixelY);
-        _scanWinL = ScanX(CameraX);
-        _scanWinR = ScanX(CameraX + Arcade.PlayfieldVisibleWidth * Arcade.UnitsPerPixel);
+        // Player blip (amode1.src:1243-1263): column $4B + screen column/16, row Y/8 + SCANH (centre of a 5-px plus).
+        _scanPlayerX = 0x4B * 2 + (Player.ScreenPx / 32) * 2;
+        _scanPlayerY = Player.PixelY / 8 + Arcade.ScannerTop;
+        // Visible-window ticks are fixed at byte columns $4C (left pixel) and $53 (right pixel) (MTX, amode1.src:1228-1235).
+        _scanWinL = 0x4C * 2;
+        _scanWinR = 0x53 * 2 + 1;
     }
 
     public void BuildSnapshot(FrameSnapshot s)

@@ -204,14 +204,31 @@ public class SmartBombAndHyperspaceTests
     }
 
     [Fact]
-    public void SmartBomb_HasRearmDelay_AndRunsOut()
+    public void SmartBomb_RearmsOnlyAfterFlashes_Release_AndTenFrames()
     {
         var s = TestUtil.NewPlaying();
-        s.Step(new PlayerInput { SmartBombPressed = true });
-        s.Step(new PlayerInput { SmartBombPressed = true });
+        var held = new PlayerInput { SmartBombHeld = true };
+        s.Step(held with { SmartBombPressed = true });
         Assert.Equal(2, s.SmartBombs);
-        for (int i = 0; i < 5; i++) { s.Run(11); s.Step(new PlayerInput { SmartBombPressed = true }); }
-        Assert.Equal(0, s.SmartBombs);
+        s.Run(40, held);                                           // keep holding: nothing more
+        s.Step(held with { SmartBombPressed = true });              // even a fresh edge while locked is ignored
+        Assert.Equal(2, s.SmartBombs);
+        s.Run(9);                                                  // released, but 10 frames have not passed
+        s.Step(held with { SmartBombPressed = true });
+        Assert.Equal(2, s.SmartBombs);
+        s.Run(10);
+        s.Step(held with { SmartBombPressed = true });
+        Assert.Equal(1, s.SmartBombs);
+    }
+
+    [Fact]
+    public void SmartBomb_QuickDoubleTap_SpendsOneBomb()
+    {
+        var s = TestUtil.NewPlaying();
+        s.Step(new PlayerInput { SmartBombPressed = true, SmartBombHeld = true });
+        s.Run(3);
+        s.Step(new PlayerInput { SmartBombPressed = true, SmartBombHeld = true });
+        Assert.Equal(2, s.SmartBombs);
     }
 
     [Fact]

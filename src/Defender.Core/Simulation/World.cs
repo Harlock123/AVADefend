@@ -26,10 +26,12 @@ public sealed partial class GameSession
         int span = Arcade.ScreenWidth + 8;
         if (shift != 0)
             foreach (var s in Stars) s.X = ((s.X + shift) % span + span) % span;
-        // One star per frame changes colour (cycling through 0-7) and occasionally moves.
+        // SBLNK (defa7.src:2160-2197): one star per frame changes colour; on about half the frames it also jumps
+        // to a new X, and only while the planet is gone does its Y re-randomise.
         var t = Stars[Rng.Next(Stars.Count)];
         t.Color = (byte)((t.Color + 1) & 7);
-        if (!PlanetActive || Rng.Next(16) == 0) { t.Y = Rng.Range(Arcade.YMin + 1, 168); t.X = Rng.Next(span); }
+        if ((Rng.NextByte() & 1) == 0) t.X = Rng.Next(span);
+        if (!PlanetActive) t.Y = Rng.Range(Arcade.YMin + 1, 168);
     }
 
     // ----- palette (BBGGGRRR bytes; defb6.src:1876-1891 layout, our own colour choices) ----------------
@@ -57,7 +59,12 @@ public sealed partial class GameSession
         }
         Palette[Pal.WaveBlue] = WaveColors[(Math.Max(Wave, 1) - 1) % WaveColors.Length];
         Palette[Pal.DeathGlow] = State == SessionState.Dying ? DeathGlow[Math.Min(StateTimer / 4, DeathGlow.Length - 1)] : (byte)0xFF;
-        // Background complement flash (smart bomb, death, planet explosion).
+        // Background complement flash (smart bomb, death); planet explosion bursts tint it a random colour.
         Palette[Pal.Background] = FlashFrames > 0 && (FlashFrames / 2) % 2 == 1 ? (byte)0xFF : (byte)0x00;
+        if (_planetFlashFrames > 0)
+        {
+            _planetFlashFrames--;
+            if (!Policy.SuppressFlashes) Palette[Pal.Background] = PlanetFlashColor;
+        }
     }
 }

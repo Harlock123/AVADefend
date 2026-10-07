@@ -17,6 +17,8 @@ public sealed class Player
     public int LastVertical { get; set; }
     public int ReverseCooldown { get; set; }
     public int BombCooldown { get; set; }
+    public bool ReverseLocked { get; set; }   // must be released before the 5-frame re-arm starts
+    public bool BombLocked { get; set; }      // SBFLG: flashes + 10 frames, then release, then 10 frames
     public int AutoFireTimer { get; set; }
     public bool InHyperspace { get; set; }
     public int HyperTimer { get; set; }
@@ -38,6 +40,7 @@ public sealed class Player
         Y = Arcade.ShipStartY << 8;
         VyMag = Vy = LastVertical = 0;
         ReverseCooldown = BombCooldown = AutoFireTimer = 0;
+        ReverseLocked = BombLocked = false;
         InHyperspace = HyperAppearing = false;
         HyperTimer = 0;
     }
@@ -83,14 +86,18 @@ public sealed partial class GameSession
     private void HandleButtons(in Input.PlayerInput input)
     {
         var p = Player;
-        if (p.ReverseCooldown > 0) p.ReverseCooldown--;
-        if (p.BombCooldown > 0) p.BombCooldown--;
-
-        if (input.ReversePressed && p.ReverseCooldown == 0)
+        // REV (defa7.src:3157-3171): after a reverse the button must be released, then 5 more frames pass.
+        if (p.ReverseLocked && !input.ReverseHeld) { p.ReverseLocked = false; p.ReverseCooldown = Arcade.ReverseRearmFrames; }
+        else if (!p.ReverseLocked && p.ReverseCooldown > 0) p.ReverseCooldown--;
+        if (input.ReversePressed && !p.ReverseLocked && p.ReverseCooldown == 0)
         {
-            p.Facing = -p.Facing;     // velocity untouched; drag and thrust do the rest (defa7.src:3157)
-            p.ReverseCooldown = Arcade.ReverseRearmFrames;
+            p.Facing = -p.Facing;     // velocity untouched; drag and thrust do the rest
+            p.ReverseLocked = true;
         }
+
+        // SBOMB (defa7.src:3175-3209): SBFLG holds through 4×2 flash frames + 10, then until release, then 10 more.
+        if (p.BombCooldown > 0) p.BombCooldown--;
+        else if (p.BombLocked && !input.SmartBombHeld) { p.BombLocked = false; p.BombCooldown = Arcade.SmartBombRearmFrames; }
 
         bool fire = input.FirePressed;
         if (Policy.HoldToFire && input.FireHeld)
@@ -100,7 +107,7 @@ public sealed partial class GameSession
         if (p.AutoFireTimer > 0) p.AutoFireTimer--;
         if (fire && FireLaser()) p.AutoFireTimer = Policy.HoldToFireInterval;
 
-        if (input.SmartBombPressed && p.BombCooldown == 0 && SmartBombs > 0) DetonateSmartBomb();
+        if (input.SmartBombPressed && !p.BombLocked && p.BombCooldown == 0 && SmartBombs > 0) DetonateSmartBomb();
         if (input.HyperspacePressed) EnterHyperspace();
     }
 
@@ -203,7 +210,8 @@ public sealed partial class GameSession
     private void DetonateSmartBomb()
     {
         SmartBombs--;
-        Player.BombCooldown = Arcade.SmartBombRearmFrames;
+        Player.BombLocked = true;
+        Player.BombCooldown = 8 + Arcade.SmartBombRearmFrames;
         _sounds.Add(Audio.SoundId.SmartBomb);
         if (!Policy.SuppressFlashes) FlashFrames = 8; // background complemented every 2 frames (defa7.src:3196)
         // Every drawn enemy (not materialising) dies with normal scoring; humanoids and shells are untouched.

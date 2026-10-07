@@ -304,11 +304,8 @@ public sealed partial class GameSession
                 h.Y -= 1 << 8;   // pulled up into the lander 1 px/frame
                 if (h.PixelY <= e.PixelY + 2)
                 {
-                    h.State = HumanoidState.Dead;
-                    h.Carrier = -1;
-                    OnHumanoidLost();
+                    KillHumanoid(h);   // LNDFX1 → ASTK1: the humanoid explodes (AHSND)
                     Mutate(e);
-                    _sounds.Add(SoundId.MutantCreated);
                 }
                 break;
             }
@@ -403,7 +400,7 @@ public sealed partial class GameSession
             if (d >= 0) { if (d >= 0x20) b.Vy -= 0x10; else if (d <= 0x10) b.Vy += 0x10; }
             else { if (d <= -0x20) b.Vy += 0x10; else if (d >= -0x10) b.Vy -= 0x10; }
             // Mines only from the on-screen branch, 1 in 8 updates, fewer than 10 at a time (BOMBST).
-            if ((Rng.NextByte() & 7) == 0 && Shells.Count < Arcade.MaxShells && Shells.Count(s => s.Mine) < Arcade.MaxMines)
+            if ((Rng.NextByte() & 7) == 0 && Shells.Count < Arcade.MaxMines)   // BMBCNT counts every shell
                 Shells.Add(new Shell { X16 = b.X << 4, Y = b.Y + (3 << 8), Mine = true, Life = ((Rng.NextByte() & 0x1F) + 1) * 8 });
         }
         else
@@ -423,19 +420,21 @@ public sealed partial class GameSession
     {
         if (--e.ShotTimer > 0) return;
         e.ShotTimer = Rng.RMax(Params[timer]);
-        if (!OnScreen(e.X) || e.PixelY <= Arcade.YMin || !Player.Alive || Player.InHyperspace) return;
-        // Aimed shot (SHOOT, defb6.src:534-570): reaches a jittered aim point in ~64 frames.
-        int dxPx = DxToPlayerPx(e.X) + Rng.Range(-16, 15);
-        int dyPx = Player.PixelY + Rng.Range(-16, 15) - e.PixelY;
-        int vx16 = dxPx * Arcade.UnitsPerPixel * 16 / Arcade.AimFrames;
-        if (Rng.NextByte() > 120) vx16 += Player.V16 * 16;   // lead / world compensation in ~53% of shots
-        FireShell(e.X, e.Y, vx16, (dyPx << 8) / Arcade.AimFrames);
+        if (!OnScreen(e.X) || e.PixelY <= Arcade.YMin) return;   // SHOOT does not check the player's state
+        // SHOOT (defb6.src:534-570): 8-bit screen-column and row differences with a ±16 jitter; ×4 gives a
+        // velocity that reaches the aim point in 64 frames. The same random byte decides the lead.
+        int seed = Rng.NextByte(), lseed = Rng.NextByte();
+        int dCols = (sbyte)((seed & 0x1F) - 16 + Player.ScreenPx / 2 - SignedScreenX(e.X) / 2);
+        int dRows = (sbyte)((lseed & 0x1F) - 16 + Player.PixelY - e.PixelY);
+        int vx16 = dCols * 16;                                // d cols × 2 px / 64 frames = d world units/frame
+        if (seed > 120) vx16 += Player.V16 * 16;              // add the ship's velocity in ~53% of shots
+        FireShell(e.X, e.Y, vx16, dRows * 4);
     }
 
     private void FireShell(int x, int y, int vx16, int vy)
     {
         if (Shells.Count >= Arcade.MaxShells || !OnScreen(x) || (y >> 8) <= Arcade.YMin) return;
-        Shells.Add(new Shell { X16 = x << 4, Y = y + (2 << 8), Vx16 = vx16, Vy = vy, Life = Arcade.ShellLifetimeFrames });
+        Shells.Add(new Shell { X16 = x << 4, Y = y, Vx16 = vx16, Vy = vy, Life = Arcade.ShellLifetimeFrames });
         _sounds.Add(SoundId.EnemyShot);
     }
 
@@ -449,7 +448,7 @@ public sealed partial class GameSession
             s.X16 = (s.X16 + s.Vx16) & ((Arcade.WorldMask << 4) | 0xF);
             s.Y += s.Vy;
             int py = s.Y >> 8;
-            if (!OnScreen(s.X) || py <= Arcade.YMin || py >= Arcade.YMax) s.Dead = true;
+            if (!OnScreen(s.X) || py <= Arcade.YMin || py > 255) s.Dead = true;   // only the top test, plus 8-bit wrap
         }
     }
 

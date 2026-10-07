@@ -14,7 +14,9 @@ public readonly record struct PlayerInput(
     bool HyperspacePressed,
     bool PausePressed,
     bool StartPressed,
-    bool Start2Pressed = false)
+    bool Start2Pressed = false,
+    bool ReverseHeld = false,
+    bool SmartBombHeld = false)
 {
     public static readonly PlayerInput None = default;
 }
@@ -71,7 +73,9 @@ public sealed class InputEdgeDetector
             HyperspacePressed: _latHyper,
             PausePressed: _latPause,
             StartPressed: _latStart,
-            Start2Pressed: _latStart2);
+            Start2Pressed: _latStart2,
+            ReverseHeld: l.Reverse || reverse,
+            SmartBombHeld: l.SmartBomb);
         _latReverse = _latFire = _latBomb = _latHyper = _latPause = _latStart = _latStart2 = false;
         return input;
     }

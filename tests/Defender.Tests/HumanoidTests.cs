@@ -114,8 +114,17 @@ public class HumanoidTests
         Assert.True(s.PlanetActive);
         s.TestKillHumanoid(h);
         Assert.False(s.PlanetActive);
-        Assert.Contains(Core.Audio.SoundId.PlanetExplode, s.Sounds);
-        s.Run(7);
+        // TERBLO: lightning on each of 16 bursts, the terrain-blow sound only at the end (~50-90 frames).
+        int frames = 0, lightning = 0; bool blowSound = false;
+        while (s.PlanetExploding && frames < 200)
+        {
+            s.Step(default); frames++;
+            lightning += s.Sounds.Count(x => x == Core.Audio.SoundId.HumanoidDies);
+            blowSound |= s.Sounds.Contains(Core.Audio.SoundId.PlanetExplode);
+        }
+        Assert.InRange(frames, 48, 96);
+        Assert.Equal(16, lightning);
+        Assert.True(blowSound);
         Assert.Equal(EnemyKind.Mutant, lander.Kind);
         // New lander squads arrive as mutants while the planet is gone.
         s.TestSetLanderReserve(5);

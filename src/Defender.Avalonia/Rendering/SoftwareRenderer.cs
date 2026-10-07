@@ -168,20 +168,16 @@ public sealed class SoftwareRenderer
         if (!attract && s.State != SessionState.EnterInitials)
         {
             uint w = _pal[Pal.White];
-            // Visible-window brackets and player blip.
+            // Visible-window ticks: 1 px wide, 2 rows, at the top and bottom of the scanner (MTX).
             foreach (int x in new[] { s.ScannerWindowLeft, s.ScannerWindowRight })
             {
-                Plot(x, Arcade.ScannerTop, w); Plot(x, Arcade.ScannerTop + 1, w);
-                Plot(x, Arcade.ScannerBottom - 2, w); Plot(x, Arcade.ScannerBottom - 1, w);
+                Plot(x, Arcade.ScannerTop + 1, w); Plot(x, Arcade.ScannerTop + 2, w);
+                Plot(x, Arcade.ScannerTop + 30, w); Plot(x, Arcade.ScannerTop + 31, w);
             }
-            HLine(s.ScannerWindowLeft, s.ScannerWindowLeft + 2, Arcade.ScannerTop, w);
-            HLine(s.ScannerWindowRight - 2, s.ScannerWindowRight, Arcade.ScannerTop, w);
-            HLine(s.ScannerWindowLeft, s.ScannerWindowLeft + 2, Arcade.ScannerBottom - 1, w);
-            HLine(s.ScannerWindowRight - 2, s.ScannerWindowRight, Arcade.ScannerBottom - 1, w);
             if (s.PlayerVisible)
             {
-                HLine(s.ScannerPlayerX - 1, s.ScannerPlayerX + 2, s.ScannerPlayerY, w);
-                Plot(s.ScannerPlayerX, s.ScannerPlayerY + 1, w);
+                int px = s.ScannerPlayerX, py = s.ScannerPlayerY;   // 5-pixel plus
+                Plot(px, py - 1, w); Plot(px - 1, py, w); Plot(px, py, w); Plot(px + 1, py, w); Plot(px, py + 1, w);
             }
         }
 
