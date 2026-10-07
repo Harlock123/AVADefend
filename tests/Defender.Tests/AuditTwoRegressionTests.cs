@@ -102,4 +102,33 @@ public class AuditTwoRegressionTests
         for (int i = 0; i < Arcade.HyperspaceBlankFrames; i++) { s.Step(default); heard.AddRange(s.Sounds); }
         Assert.Contains(Core.Audio.SoundId.LanderMaterialize, heard);
     }
+
+    [Fact]
+    public void Appear_Lasts47DrawnFrames_ConvergingToSizeZero_WhileMoving()
+    {
+        var s = TestUtil.NewPlaying();
+        var e = s.TestSpawnAppearing(EnemyKind.Pod, s.WorldAtScreen(150), 120);
+        e.Vx = 32;
+        var snap = new FrameSnapshot();
+        var sizes = new List<int>();
+        int x0 = e.X;
+        while (e.Appear > 0) { s.Step(default); s.BuildSnapshot(snap); if (e.Appear > 0) sizes.Add(snap.Blasts.Single().S); }
+        Assert.Equal(Enumerable.Range(0, 47).Reverse(), sizes);   // 46 … 0
+        Assert.Equal((x0 + 48 * 32) & 0xFFFF, e.X);             // moved under VELO while invisible
+    }
+
+    [Fact]
+    public void Explosion_SpreadsFor72Frames_FromTheLaserHitPoint()
+    {
+        var s = TestUtil.NewPlaying();
+        var e = s.TestSpawn(EnemyKind.Bomber, s.WorldAtScreen(150), s.Player.PixelY + 2);
+        e.Vx = e.Vy = 0; e.Nap = 1000;
+        s.Step(new PlayerInput { FirePressed = true });
+        s.RunUntil(() => e.Dead, 30);
+        var b = s.Blasts.Single();
+        Assert.Equal(s.Player.PixelY + 4, b.CenterRow);          // the laser row, not the sprite centre
+        int frames = 0;
+        while (s.Blasts.Count > 0) { s.Step(default); frames++; }
+        Assert.InRange(frames, 71, 74);
+    }
 }

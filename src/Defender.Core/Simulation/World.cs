@@ -58,7 +58,9 @@ public sealed partial class GameSession
             Palette[Pal.BomberD] = d; Palette[Pal.BomberE] = e; Palette[Pal.BomberF] = f;
         }
         Palette[Pal.WaveBlue] = WaveColors[(Math.Max(Wave, 1) - 1) % WaveColors.Length];
-        Palette[Pal.DeathGlow] = State == SessionState.Dying ? DeathGlow[Math.Min(StateTimer / 4, DeathGlow.Length - 1)] : (byte)0xFF;
+        Palette[Pal.DeathGlow] = State != SessionState.Dying ? (byte)0xFF
+            : StateTimer < DeathGlowFrames ? DeathGlow[Math.Min(StateTimer / 4, DeathGlow.Length - 1)]
+            : PlexColor(Math.Max(0, StateTimer - DeathGlowFrames - 2));
         // Background complement flash (smart bomb, death); planet explosion bursts tint it a random colour.
         Palette[Pal.Background] = FlashFrames > 0 && (FlashFrames / 2) % 2 == 1 ? (byte)0xFF : (byte)0x00;
         if (_planetFlashFrames > 0)

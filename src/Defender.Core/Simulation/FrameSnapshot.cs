@@ -5,6 +5,9 @@ public readonly record struct LaserDraw(int Tail, int Fizzle, int Head, int Y, i
 public readonly record struct PointDraw(int X, int Y, byte Color);
 public readonly record struct TextDraw(int X, int Y, string Text, byte Color);
 
+/// <summary>Sprite drawn as spread 2-px × 2-row tiles (explosion or appear). Columns are 2 px; S = spread factor.</summary>
+public readonly record struct BlastDraw(Sprite Sprite, int TopCol, int TopRow, int CenterCol, int CenterRow, int S);
+
 /// <summary>
 /// Everything the renderer needs for one frame, in game-screen pixel coordinates (304×256 space,
 /// before the 292×240 visible-area crop). Lists are reused between frames to avoid allocation.
@@ -29,7 +32,8 @@ public sealed class FrameSnapshot
     public readonly List<SpriteDraw> Sprites = new();
     public readonly List<LaserDraw> Lasers = new();
     public readonly List<PointDraw> Stars = new();
-    public readonly List<PointDraw> Particles = new();
+    public readonly List<PointDraw> Particles = new();   // PLEX pieces (2×2, colour $B)
+    public readonly List<BlastDraw> Blasts = new();
     public readonly List<TextDraw> Popups = new();
     public readonly List<ScannerBlip> Scanner = new();
     public readonly List<PointDraw> ScannerTerrain = new();
@@ -115,6 +119,7 @@ public sealed partial class GameSession
         s.Sprites.Clear();
         s.Lasers.Clear();
         s.Particles.Clear();
+        s.Blasts.Clear();
         s.Popups.Clear();
         if (inPlay && !s.HyperspaceBlank && State != SessionState.WaveComplete)
         {
@@ -124,25 +129,34 @@ public sealed partial class GameSession
                 foreach (var h in Humanoids)
                     if (h.Alive) AddIfVisible(s, Sprites.Humanoid, h.X, h.PixelY, 0);
                 foreach (var e in Enemies)
-                    if (!e.Dead) AddIfVisible(s, SpriteOf(e), e.X, e.PixelY, e.Appear);
+                {
+                    if (e.Dead) continue;
+                    if (e.Appear > 0) AddAppear(s, SpriteOf(e), e.X, e.PixelY, e.Appear - 1);
+                    else AddIfVisible(s, SpriteOf(e), e.X, e.PixelY, 0);
+                }
+                foreach (var b in Blasts)
+                {
+                    int tc = SignedScreenX(b.TopLeftX) >> 1, cc = SignedScreenX(b.CenterX) >> 1;
+                    s.Blasts.Add(new BlastDraw(Sprites.ByName(b.SpriteName), tc, b.TopRow, cc, b.CenterRow, b.Size >> 8));
+                }
                 foreach (var sh in Shells)
                     if (!sh.Dead) AddIfVisible(s, sh.Mine ? Sprites.Mine : Sprites.Shot, sh.X, sh.Y >> 8, 0);
                 foreach (var l in Lasers) s.Lasers.Add(new LaserDraw(l.Tail, l.Fizzle, l.Head, l.Y, l.Dir));
             }
             if (s.PlayerVisible)
             {
-                int appear = Player.InHyperspace && Player.HyperAppearing ? Player.HyperTimer : 0;
-                byte? mono = State == SessionState.Dying ? Pal.DeathGlow : null;
-                s.Sprites.Add(new SpriteDraw(Player.Sprite, Player.ScreenPx, Player.PixelY, appear, mono));
+                if (Player.InHyperspace && Player.HyperAppearing)
+                    AddAppear(s, Player.Sprite, Player.WorldX(CameraX), Player.PixelY, Math.Max(0, Player.HyperTimer - 1));
+                else if (State != SessionState.Dying || (StateTimer / 2) % 2 == 1)   // death silhouette: 2 frames off, 2 on
+                    s.Sprites.Add(new SpriteDraw(Player.Sprite, Player.ScreenPx, Player.PixelY, 0,
+                                                 State == SessionState.Dying ? Pal.DeathGlow : null));
             }
         }
         if (inPlay)
         {
-            foreach (var p in Particles)
-            {
-                int sx = SignedScreenX(p.X);
-                if (sx >= 0 && sx < Arcade.ScreenWidth) s.Particles.Add(new PointDraw(sx, p.Y >> 8, p.Color));
-            }
+            if (State == SessionState.Dying)
+                foreach (var p in Particles)
+                    if (p.Life != 0) s.Particles.Add(new PointDraw(p.X >> 8, p.Y >> 8, Pal.DeathGlow));
             foreach (var p in Popups)
             {
                 int sx = SignedScreenX(p.X);
@@ -160,6 +174,16 @@ public sealed partial class GameSession
         }
         s.ScannerPlayerX = _scanPlayerX; s.ScannerPlayerY = _scanPlayerY;
         s.ScannerWindowLeft = _scanWinL; s.ScannerWindowRight = _scanWinR;
+    }
+
+    /// <summary>APST appear: tiles converge on a pseudo-random column at mid-height (samexap7.src:188-197).</summary>
+    private void AddAppear(FrameSnapshot s, Sprite spr, int worldX, int y, int size)
+    {
+        int sx = SignedScreenX(worldX);
+        if (sx < -96 || sx >= 416) return;
+        int top = sx >> 1, wCols = (spr.Width + 1) / 2;
+        int k = (2 * (((top & 0xFF) * 218) >> 8)) & 0xFF;
+        s.Blasts.Add(new BlastDraw(spr, top, y, top + (wCols * k >> 8), y + spr.Height / 2, size));
     }
 
     private void AddIfVisible(FrameSnapshot s, Sprite spr, int worldX, int y, int appear)

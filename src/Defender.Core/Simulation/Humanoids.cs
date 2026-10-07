@@ -100,7 +100,7 @@ public sealed partial class GameSession
         if (!h.Alive) return;
         h.State = HumanoidState.Dead;
         h.Carrier = -1;
-        SpawnExplosion(h.X, h.Y, 8, Pal.Purple, speed: 1);
+        StartBlast(Sprites.Humanoid, h.X, h.PixelY);
         _sounds.Add(SoundId.HumanoidDies);
         OnHumanoidLost();
     }
@@ -129,7 +129,7 @@ public sealed partial class GameSession
         for (int k = 0; k < 2; k++)
         {
             int x = WrapX(CameraX + ((Rng.NextByte() & 0x3F) << 8 | Rng.NextByte()));
-            SpawnExplosion(x, (Terrain.HeightAtUnits(x) - 10) << 8, 16, (byte)Rng.Range(2, 9), speed: 3);
+            StartBlast(Sprites.TerrainChunk, x, Terrain.HeightAtUnits(x) - 10);   // TEREX at the ground (off screen: none)
         }
         PlanetFlashColor = PlanetFlashCycle[(Rng.NextByte() & 0x1F) % PlanetFlashCycle.Length];   // COLTAB[SEED&$1F]
         _planetFlashFrames = 2;

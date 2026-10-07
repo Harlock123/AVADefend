@@ -4,7 +4,8 @@ namespace Defender.Core.Simulation;
 
 public sealed partial class GameSession
 {
-    private const int AppearFrames = 32;
+    // APST: size 47, −1 per frame; sizes 46..0 are drawn (47 frames) and the object is real on the 48th update.
+    private const int AppearFrames = 48;
 
     public static Sprite SpriteOf(Enemy e) => e.Kind switch
     {
@@ -202,7 +203,16 @@ public sealed partial class GameSession
         {
             var e = Enemies[i];
             if (e.Dead) continue;
-            if (e.Appear > 0) { e.Appear--; continue; }
+            if (e.Appear > 0)
+            {
+                // Appearing: no AI, but it still moves (VELO); outside [-96, +416) px of the screen it finishes at once.
+                e.Appear--;
+                int rel = SignedScreenX(e.X);
+                if (rel < -96 || rel >= 416) e.Appear = 0;
+                e.X = WrapX(e.X + e.Vx);
+                e.Y = WrapY(e.Y + e.Vy);
+                continue;
+            }
             if (--e.Nap <= 0)
             {
                 switch (e.Kind)
@@ -454,7 +464,7 @@ public sealed partial class GameSession
 
     // ----- kills ---------------------------------------------------------------------------------------
 
-    private void KillEnemy(Enemy e, bool scored)
+    private void KillEnemy(Enemy e, bool scored, int? hitX = null, int? hitRow = null)
     {
         if (e.Dead) return;
         e.Dead = true;
@@ -464,11 +474,7 @@ public sealed partial class GameSession
             EnemyKind.Baiter => 200, EnemyKind.Bomber => 250, EnemyKind.Pod => 1000, _ => 0,
         };
         if (scored) AddScore(points);
-        SpawnExplosion(e.X, e.Y, e.Kind == EnemyKind.Pod ? 24 : 12, e.Kind switch
-        {
-            EnemyKind.Lander => Pal.Green, EnemyKind.Bomber => Pal.BomberD, EnemyKind.Pod => Pal.Purple,
-            EnemyKind.Swarmer => Pal.Red, EnemyKind.Baiter => Pal.Green, _ => Pal.CycleC,
-        });
+        StartBlast(SpriteOf(e), e.X, e.PixelY, hitX, hitRow);
         _sounds.Add(e.Kind switch
         {
             EnemyKind.Lander => SoundId.EnemyExplode,   // LHSND
@@ -498,25 +504,4 @@ public sealed partial class GameSession
         }
     }
 
-    private void SpawnExplosion(int x, int y, int pieces, byte color, int speed = 2)
-    {
-        for (int i = 0; i < pieces; i++)
-        {
-            double a = i * Math.Tau / pieces;
-            Particles.Add(new Particle
-            {
-                X = x + 4 * Arcade.UnitsPerPixel, Y = y + (4 << 8),
-                Vx = (int)(Math.Cos(a) * speed * Arcade.UnitsPerPixel), Vy = (int)(Math.Sin(a) * speed * 256),
-                Life = 30 + Rng.Next(10), Color = color,
-            });
-        }
-    }
-
-    private void UpdateParticles()
-    {
-        foreach (var p in Particles) { p.X = WrapX(p.X + p.Vx); p.Y += p.Vy; p.Life--; }
-        Particles.RemoveAll(p => p.Life <= 0);
-        foreach (var p in Popups) p.Life--;
-        Popups.RemoveAll(p => p.Life <= 0);
-    }
 }

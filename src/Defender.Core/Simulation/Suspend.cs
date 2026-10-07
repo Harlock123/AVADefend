@@ -26,6 +26,7 @@ public sealed class SuspendData
     public bool FirstGexec { get; set; }
     public bool BomberFlip { get; set; }
     public int[] Blow { get; set; } = [0, 0, 0, 0];
+    public List<Blast> Blasts { get; set; } = new();
     public bool WaveEndedOnDeath { get; set; }
     public byte[] Palette { get; set; } = [];
     public Player Player { get; set; } = new();
@@ -60,7 +61,8 @@ public sealed partial class GameSession
             Counters = [_nextEnemyId, _gexecCounter, _intraCounter, _waveTimer, _baiterTimer, _bomberSquadCounter,
                         _starScrollAcc, _scannerTimer, _planetBlowTimer, _walkSlot, _bonusCounted, WaveBonusAwarded],
             FirstGexec = _firstGexec, BomberFlip = _bomberFlip,
-            Blow = [BlowState.iteration, BlowState.wait, BlowState.flash, BlowState.color], WaveEndedOnDeath = _waveEndedOnDeath,
+            Blow = [BlowState.iteration, BlowState.wait, BlowState.flash, BlowState.color],
+            Blasts = Blasts.Select(Clone).ToList(), WaveEndedOnDeath = _waveEndedOnDeath,
             Palette = (byte[])Palette.Clone(),
             Player = Clone(Player), Enemies = Enemies.Select(Clone).ToList(), Humanoids = Humanoids.Select(Clone).ToList(),
             Shells = Shells.Select(Clone).ToList(), Lasers = Lasers.Select(Clone).ToList(), Popups = Popups.Select(Clone).ToList(),
@@ -95,7 +97,8 @@ public sealed partial class GameSession
         (s._nextEnemyId, s._gexecCounter, s._intraCounter, s._waveTimer, s._baiterTimer, s._bomberSquadCounter) = (c[0], c[1], c[2], c[3], c[4], c[5]);
         (s._starScrollAcc, s._scannerTimer, s._planetBlowTimer, s._walkSlot, s._bonusCounted, s.WaveBonusAwarded) = (c[6], c[7], c[8], c[9], c[10], c[11]);
         s._firstGexec = d.FirstGexec; s._bomberFlip = d.BomberFlip;
-        if (d.Blow is { Length: 4 } b) s.BlowState = (b[0], b[1], b[2], (byte)b[3]); s._waveEndedOnDeath = d.WaveEndedOnDeath;
+        if (d.Blow is { Length: 4 } b) s.BlowState = (b[0], b[1], b[2], (byte)b[3]);
+        if (d.Blasts is not null) s.Blasts.AddRange(d.Blasts.Where(x => x is not null && x.SpriteName is not null).Select(Clone)); s._waveEndedOnDeath = d.WaveEndedOnDeath;
         d.Palette.CopyTo(s.Palette, 0);
         Copy(d.Player, s.Player);
         s.Enemies.AddRange(d.Enemies.Select(Clone));

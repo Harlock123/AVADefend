@@ -120,9 +120,32 @@ public sealed class SoftwareRenderer
             if (d.Y + d.Sprite.Height <= Arcade.ScannerBottom) continue;
             DrawSprite(d.Sprite, d.X, d.Y, d.Appear, d.Mono is { } m ? _pal[m] : null);
         }
+        foreach (var b in s.Blasts) DrawBlast(b);
         foreach (var l in s.Lasers) DrawLaser(l);
-        foreach (var p in s.Particles) if (p.Y > Arcade.ScannerBottom) { Plot(p.X, p.Y, _pal[p.Color & 0xF]); Plot(p.X + 1, p.Y, _pal[p.Color & 0xF]); }
+        foreach (var p in s.Particles)   // PLEX: 2×2 squares in colour $B
+        {
+            uint c = _pal[p.Color & 0xF];
+            Plot(p.X, p.Y, c); Plot(p.X + 1, p.Y, c); Plot(p.X, p.Y + 1, c); Plot(p.X + 1, p.Y + 1, c);
+        }
         foreach (var t in s.Popups) Text(t.Text, t.X, t.Y, _pal[t.Color]);
+    }
+
+    /// <summary>EWRITE (samexap7.src:223-377): each 2-px × 2-row tile keeps its colours; only the spacing scales.</summary>
+    private void DrawBlast(BlastDraw b)
+    {
+        var spr = b.Sprite;
+        int xoff = b.CenterCol - b.TopCol, dy = b.CenterRow - b.TopRow;
+        int yoff = dy >> 1, flavor = dy & 1;
+        for (int py = 0; py < spr.Height; py++)
+            for (int px = 0; px < spr.Width; px++)
+            {
+                byte c = spr.Pixels[py * spr.Width + px];
+                if (c == Sprite.Transparent) continue;
+                int col = b.CenterCol + ((px >> 1) - xoff) * b.S;
+                int row = b.CenterRow - flavor + ((py >> 1) - yoff) * 2 * b.S;
+                if (col < 0 || col > 0x98 || row < Arcade.YMin || row > 255) continue;
+                Plot(col * 2 + (px & 1), row + (py & 1), _pal[c]);
+            }
     }
 
     private void DrawLaser(LaserDraw l)

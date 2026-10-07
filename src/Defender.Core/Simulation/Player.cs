@@ -80,7 +80,8 @@ public sealed partial class GameSession
         Shells.RemoveAll(s => s.Dead);
         Lasers.RemoveAll(l => l.Done);
         UpdatePlanetBlow();
-        UpdateParticles();
+        UpdateBlasts();
+        UpdatePopups();
     }
 
     private void HandleButtons(in Input.PlayerInput input)
@@ -201,7 +202,19 @@ public sealed partial class GameSession
             if (dir > 0 ? sx < bestX : sx > bestX) { best = null; bestH = h; bestX = sx; }
         }
         if (bestH is not null) { KillHumanoid(bestH); return true; }
-        if (best is not null) { KillEnemy(best, scored: true); return true; }
+        if (best is not null)
+        {
+            // CENTMP: the first solid pixel of the sprite on the beam row, seen from the beam's side.
+            var spr = SpriteOf(best);
+            int sx = SignedScreenX(best.X), row = y - best.PixelY, hit = sx + spr.Width / 2;
+            for (int k = 0; k < spr.Width; k++)
+            {
+                int px = dir > 0 ? k : spr.Width - 1 - k;
+                if (spr.Solid(px, row)) { hit = sx + px; break; }
+            }
+            KillEnemy(best, scored: true, hit, y);
+            return true;
+        }
         return false;
     }
 

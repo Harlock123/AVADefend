@@ -113,6 +113,19 @@ public static class Sprites
     public static readonly Sprite ShipIcon = new("shipicon", "C66.......", "C66999999.", ".6699999..", "..66......");
     public static readonly Sprite BombIcon = new("bombicon", ".22222", "222222", ".22222");
 
+    /// <summary>Chunk of exploding ground for the planet explosion (our own art standing in for TEREX).</summary>
+    public static readonly Sprite TerrainChunk = new("terrainchunk", ".7474.", "774477", "47..74", "774477", ".7474.");
+
+    private static Dictionary<string, Sprite>? s_byName;
+
+    /// <summary>Lookup by name so effects that reference a sprite can be serialised.</summary>
+    public static Sprite ByName(string name)
+    {
+        s_byName ??= new[] { ShipRight, ShipLeft, Mutant, Baiter, Bomber, Pod, Swarmer, Humanoid, Mine, Shot, TerrainChunk }
+            .Concat(Lander).ToDictionary(s => s.Name);
+        return s_byName.TryGetValue(name, out var s) ? s : TerrainChunk;
+    }
+
     /// <summary>Laser collision probe LASP1: 8 bytes × 1 row = 16×1 px (see GameSession.UpdateLasers).</summary>
     public const int LaserProbeWidth = 16;
 }

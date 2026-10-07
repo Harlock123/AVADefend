@@ -45,6 +45,8 @@ public sealed partial class GameSession
         return e;
     }
 
+    internal Enemy TestSpawnAppearing(EnemyKind kind, int worldX, int yPx) => NewEnemy(kind, worldX, yPx, appear: true);
+
     internal void TestKill(Enemy e) => KillEnemy(e, scored: true);
     internal void TestAddScore(int points) => AddScore(points);
     internal void TestSetLanderReserve(int n) => LanderReserve = n;

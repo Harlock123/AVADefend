@@ -72,6 +72,7 @@ public sealed partial class GameSession
     public List<Shell> Shells { get; } = new();
     public List<Laser> Lasers { get; } = new();
     public List<Popup> Popups { get; } = new();
+    /// <summary>The player-explosion (PLEX) pieces, in screen coordinates (1/256 px).</summary>
     public List<Particle> Particles { get; } = new();
     public List<Star> Stars { get; } = new();
     public byte[] Palette { get; } = new byte[16];
@@ -134,7 +135,6 @@ public sealed partial class GameSession
                 StepWaveComplete();
                 break;
             case SessionState.GameOver:
-                UpdateParticles();
                 if (StateTimer >= 180) AfterGameOver();
                 break;
             case SessionState.EnterInitials:
@@ -153,7 +153,7 @@ public sealed partial class GameSession
         State = SessionState.Attract;
         StateTimer = 0;
         Paused = false;
-        Enemies.Clear(); Shells.Clear(); Lasers.Clear(); Popups.Clear(); Particles.Clear();
+        Enemies.Clear(); Shells.Clear(); Lasers.Clear(); Popups.Clear(); Particles.Clear(); Blasts.Clear();
         PlanetActive = true;
     }
 
@@ -195,7 +195,7 @@ public sealed partial class GameSession
         _planetBlowTimer = 0;   // the explosion effect belongs to the life in which it happened
         State = SessionState.LifeStart;
         StateTimer = 0;
-        Enemies.Clear(); Shells.Clear(); Lasers.Clear(); Particles.Clear(); Popups.Clear();
+        Enemies.Clear(); Shells.Clear(); Lasers.Clear(); Particles.Clear(); Popups.Clear(); Blasts.Clear();
         Player.Reset();
         CameraX = 0;  // BGL = 0 on a new life (defa7.src:1241)
         FlashFrames = 0;
@@ -238,15 +238,19 @@ public sealed partial class GameSession
             UpdateEnemies();
             UpdateHumanoids();
             UpdateShells();
+            UpdateBlasts();
             Enemies.RemoveAll(e => e.Dead);
             Shells.RemoveAll(s => s.Dead);
         }
         if (StateTimer == DeathGlowFrames)
         {
             if (!Policy.SuppressFlashes) FlashFrames = 2;
-            SpawnExplosion(Player.WorldX(CameraX), Player.Y, 128, Pal.White, speed: 3); // 128 pieces (PLEX, blk71.src:566-672)
+            // STATUS $7F cancels every explosion and finishes every appear; then PLEX.
+            Blasts.Clear();
+            foreach (var e in Enemies) e.Appear = 0;
         }
-        UpdateParticles();
+        if (StateTimer == DeathGlowFrames + 2) StartPlex();
+        if (StateTimer > DeathGlowFrames + 2) UpdatePlex();
         if (StateTimer < DeathTotalFrames) return;
         SaveEnemiesToReserves();
         // A death that empties the wave still pays the wave bonus first (defa7.src:1386-1390).
@@ -354,7 +358,7 @@ public sealed partial class GameSession
     {
         State = SessionState.WaveComplete;
         StateTimer = 0;
-        Lasers.Clear(); Shells.Clear();
+        Lasers.Clear(); Shells.Clear(); Blasts.Clear();
         Enemies.RemoveAll(e => e.Kind == EnemyKind.Baiter || e.Dead);
         WaveBonusAwarded = 0;
         _bonusCounted = 0;
@@ -434,6 +438,12 @@ public sealed partial class GameSession
     private void StepWorldIdle()
     {
         UpdateStars(0);
-        UpdateParticles();
+        UpdatePopups();
+    }
+
+    private void UpdatePopups()
+    {
+        foreach (var p in Popups) p.Life--;
+        Popups.RemoveAll(p => p.Life <= 0);
     }
 }
