@@ -176,7 +176,7 @@ public sealed class GameHost : IDisposable
         (demo ? Attract.Demo! : Session).BuildSnapshot(Snapshot);
         Snapshot.Demo = demo;
         Snapshot.AttractPhase = Attract.Phase;
-        Snapshot.HighScore = Session.HighScores.Best;
+        Snapshot.HighScore = Math.Max(Session.HighScores.Best, Math.Max(Session.ScoreOf(0), Session.ScoreOf(1)));
     }
 
     public void Dispose()
