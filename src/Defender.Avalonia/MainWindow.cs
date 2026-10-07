@@ -23,7 +23,7 @@ public sealed class MainWindow : Window
     {
         _host = host;
         Title = Branding.WindowTitle;
-        try { Icon = new WindowIcon(global::Avalonia.Platform.AssetLoader.Open(new Uri("avares://Defender/Assets/defender-256.png"))); }
+        try { Icon = new WindowIcon(global::Avalonia.Platform.AssetLoader.Open(new Uri("avares://AVADefend/Assets/defender-256.png"))); }
         catch (Exception) { /* icon is cosmetic */ }
         Width = SoftwareRenderer3x.W; Height = SoftwareRenderer3x.H;
         MinWidth = 292; MinHeight = 240;

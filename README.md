@@ -45,7 +45,7 @@ Every push to `main` refreshes the **[latest pre-release](https://github.com/Har
 | macOS (Apple Silicon, Intel) | `AVADefend-osx-arm64.tar.gz`, `AVADefend-osx-x64.tar.gz` |
 | Linux (x64, Arm64, Arm) | `AVADefend-linux-x64.tar.gz` (and `-linux-arm64`, `-linux-arm`) |
 
-Unzip or untar and run `Defender` (`Defender.exe` on Windows). The builds are not code-signed: on macOS run `xattr -d com.apple.quarantine Defender` once (or right-click → Open); on Windows choose *More info → Run anyway* if SmartScreen asks. `Defender --selftest` prints a quick check of graphics, sound and gamepad support without opening a window.
+Unzip or untar and run `AVADefend` (`AVADefend.exe` on Windows). The builds are not code-signed: on macOS run `xattr -d com.apple.quarantine AVADefend` once (or right-click → Open); on Windows choose *More info → Run anyway* if SmartScreen asks. `AVADefend --selftest` prints a quick check of graphics, sound and gamepad support without opening a window.
 
 **Documentation**
 
@@ -106,7 +106,7 @@ dotnet publish src/Defender.Avalonia/Defender.Avalonia.csproj -c Release -r linu
   -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish/linux-x64
 ```
 
-Use `win-x64`, `win-x86`, `win-arm64`, `linux-arm64`, `linux-arm`, `osx-x64` or `osx-arm64` for the other platforms. The executable is called `Defender` (`Defender.exe` on Windows). The linux-arm64 single-file build has been run (window, sound, `--selftest`); the others are first exercised by CI.
+Use `win-x64`, `win-x86`, `win-arm64`, `linux-arm64`, `linux-arm`, `osx-x64` or `osx-arm64` for the other platforms. The executable is called `AVADefend` (`AVADefend.exe` on Windows). The linux-arm64 single-file build has been run (window, sound, `--selftest`); the others are first exercised by CI.
 
 ## Continuous integration and releases
 

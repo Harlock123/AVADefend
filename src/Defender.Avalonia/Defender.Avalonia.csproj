@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Defender.Avalonia</RootNamespace>
-    <AssemblyName>Defender</AssemblyName>
+    <AssemblyName>AVADefend</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/defender.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

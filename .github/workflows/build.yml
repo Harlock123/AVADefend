@@ -74,7 +74,7 @@ jobs:
           if [[ "${{ matrix.rid }}" == win-* ]]; then
             zip -9 -r "../../artifacts/$name.zip" .
           else
-            chmod +x Defender
+            chmod +x AVADefend
             tar -czf "../../artifacts/$name.tar.gz" .
           fi
       - uses: actions/upload-artifact@v7
@@ -108,10 +108,10 @@ jobs:
           mkdir run
           if [[ "${{ matrix.file }}" == *.zip ]]; then
             unzip -q "dl/${{ matrix.file }}" -d run
-            ./run/Defender.exe --selftest
+            ./run/AVADefend.exe --selftest
           else
             tar -xzf "dl/${{ matrix.file }}" -C run
-            ./run/Defender --selftest
+            ./run/AVADefend --selftest
           fi
 
   release:
@@ -137,5 +137,5 @@ jobs:
             gh release delete latest --yes --cleanup-tag || true
             gh release create latest artifacts/* --prerelease --target "$GITHUB_SHA" \
               --title "Latest build (main)" \
-              --notes "Built automatically from ${GITHUB_SHA::7} on main. Unzip or untar and run Defender (Defender.exe on Windows). Unofficial fan recreation; see THIRD_PARTY.md."
+              --notes "Built automatically from ${GITHUB_SHA::7} on main. Unzip or untar and run AVADefend (AVADefend.exe on Windows). Unofficial fan recreation; see THIRD_PARTY.md."
           fi
