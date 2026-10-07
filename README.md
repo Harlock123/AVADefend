@@ -124,3 +124,9 @@ src/Defender.Avalonia        desktop app, software renderer, settings UI
 tests/Defender.Tests         xUnit v3 + Avalonia headless tests
 docs/research                full research dossiers with citations
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+The licence covers this project's own code and artwork. Third-party packages keep their own licences (see [THIRD_PARTY.md](THIRD_PARTY.md)), and it grants no rights in the *Defender* name or the original Williams game.

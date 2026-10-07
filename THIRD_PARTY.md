@@ -2,6 +2,10 @@
 
 This project is an **unofficial fan recreation**. It is not made, endorsed or licensed by Williams Electronics, WMS, Midway or Warner Bros. Interactive, or by any of their successors. "Defender" is used only to identify the game being studied. All names shown to users are defined in `src/Defender.Avalonia/Branding.cs` so they can be replaced. **This project has not been cleared for public distribution.** See "Distribution status" at the end of this file.
 
+## This project's licence
+
+AVADefend's own source code and original artwork are released under the MIT License (`LICENSE`). That licence does not extend to the third-party packages below, nor to any Williams trademark or copyright.
+
 ## NuGet dependencies
 
 All versions are pinned in `Directory.Packages.props`. Licences were checked against each package's nuspec on 2026-10-07.
