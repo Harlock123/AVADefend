@@ -1,0 +1,141 @@
+# Every push: build and test, then publish AVADefend as a self-contained single-file program for every
+# platform whose native libraries we ship (SDL2 for sound/gamepad, Skia for drawing). Each packaged build
+# for Windows, macOS and Linux is then started on a real machine of that OS with --selftest. The builds are
+# attached to the workflow run; pushes to main also refresh the "latest" pre-release, and a v* tag
+# (e.g. v0.1.0) makes a proper release.
+name: Build
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to 26 on 2026-10-19
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build
+        run: dotnet build Defender.slnx -c Release -warnaserror
+      - name: Test (engine, persistence, audio, gamepad via SDL virtual controller, headless UI)
+        run: dotnet test Defender.slnx -c Release --no-build
+
+  publish:
+    needs: test
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to 26 on 2026-10-19
+    strategy:
+      fail-fast: false
+      matrix:
+        # Platforms with SDL2 natives in Ultz.Native.SDL and Skia natives (musl Linux has no SDL2 build).
+        rid:
+          - win-x64
+          - win-x86
+          - win-arm64
+          - linux-x64
+          - linux-arm64
+          - linux-arm
+          - osx-x64
+          - osx-arm64
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publish ${{ matrix.rid }}
+        run: >
+          dotnet publish src/Defender.Avalonia/Defender.Avalonia.csproj
+          -c Release -r ${{ matrix.rid }} --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:IncludeAllContentForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -o publish/${{ matrix.rid }}
+      - name: Package
+        # Windows gets a zip; everything else a tar.gz, which keeps the executable bit.
+        run: |
+          mkdir -p artifacts
+          cp README.md THIRD_PARTY.md CONTROLS.md publish/${{ matrix.rid }}/
+          if [ -f LICENSE ]; then cp LICENSE publish/${{ matrix.rid }}/; fi
+          name="AVADefend-${{ matrix.rid }}"
+          cd publish/${{ matrix.rid }}
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            zip -9 -r "../../artifacts/$name.zip" .
+          else
+            chmod +x Defender
+            tar -czf "../../artifacts/$name.tar.gz" .
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          # Uploaded as-is (no zip around the zip/tar.gz): the artifact is named after the file.
+          path: artifacts/AVADefend-${{ matrix.rid }}.*
+          archive: false
+          if-no-files-found: error
+
+  selftest:
+    # Start each packaged build on a real machine of its OS: engine, renderer, native Skia and the data
+    # folder must pass; SDL audio and gamepad are reported only (CI machines have no sound card or pad).
+    needs: publish
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, file: AVADefend-win-x64.zip }
+          - { os: macos-latest, file: AVADefend-osx-arm64.tar.gz }
+          - { os: ubuntu-24.04, file: AVADefend-linux-x64.tar.gz }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.file }}
+          path: dl
+          skip-decompress: true
+      - name: Unpack and run --selftest
+        shell: bash
+        run: |
+          mkdir run
+          if [[ "${{ matrix.file }}" == *.zip ]]; then
+            unzip -q "dl/${{ matrix.file }}" -d run
+            ./run/Defender.exe --selftest
+          else
+            tar -xzf "dl/${{ matrix.file }}" -C run
+            ./run/Defender --selftest
+          fi
+
+  release:
+    needs: [publish, selftest]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to 26 on 2026-10-19
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+          # The builds were uploaded as their own .zip/.tar.gz files: keep them that way.
+          skip-decompress: true
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            gh release create "$GITHUB_REF_NAME" artifacts/* --title "AVADefend $GITHUB_REF_NAME" --generate-notes
+          else
+            # A rolling pre-release of the newest main build.
+            gh release delete latest --yes --cleanup-tag || true
+            gh release create latest artifacts/* --prerelease --target "$GITHUB_SHA" \
+              --title "Latest build (main)" \
+              --notes "Built automatically from ${GITHUB_SHA::7} on main. Unzip or untar and run Defender (Defender.exe on Windows). Unofficial fan recreation; see THIRD_PARTY.md."
+          fi

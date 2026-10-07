@@ -170,5 +170,5 @@ Also added: `--selftest` (CI runs it on every packaged build) and F9 as a second
 
 1. Run the win-x64 build on Windows: smoke test, audio, gamepad.
 2. Compare against MAME recordings: lander timing, the baiter's first appearance, the reverse slide.
-3. Push to GitHub so the CI workflow (`.github/workflows/ci.yml`, written but never run) builds and tests on Windows, Linux and macOS.
+3. Push to GitHub: `.github/workflows/build.yml` then builds, tests, self-tests the packaged builds on Windows, macOS and Linux, and publishes the `latest` pre-release (tag `v0.1.0` for a proper release).
 4. Test with a real gamepad (vendor mappings and feel; the code path itself is now tested virtually).

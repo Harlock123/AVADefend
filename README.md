@@ -1,5 +1,7 @@
 # Defender (1981) — unofficial recreation
 
+![Wave 1: the ship fires a spread of lasers at a squad of landers above the mountains, with the scanner showing the whole planet at the top](screenshots/gameplay.png)
+
 This is a recreation of Williams Electronics' 1981 arcade game *Defender*, built with .NET 10, C# and Avalonia. It reproduces the original's mechanics, using the Red Label arcade source code as evidence:
 
 - the five-button controls;
@@ -13,6 +15,35 @@ This is a recreation of Williams Electronics' 1981 arcade game *Defender*, built
 The game is played offline by a single player. The art and sound are original work; nothing is taken from the arcade ROMs.
 
 It has two presets, **Classic** and **Modern**. Both use the same rules. Modern adds conveniences that are disclosed in the game: pause on focus loss, suspend/resume, optional hold-to-fire, flash suppression, and adjustable speed.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![A lander lifting a humanoid off the planet while the ship's lasers streak past](screenshots/abduction.png) | ![Two enemies breaking into their own coloured pieces after being shot](screenshots/explosion.png) |
+| A lander abducting a humanoid | Explosions spread the enemy's own pieces |
+| ![The ship blown into 128 white fragments in a diamond-shaped spread](screenshots/ship-explosion.png) | ![The attack wave 1 completed screen counting ten surviving humanoids for the bonus](screenshots/wave-bonus.png) |
+| Losing a ship | End-of-wave humanoid bonus |
+| ![A two-player game: player one's score waiting on the left, player two flying with their score on the right](screenshots/two-players.png) | ![The Hall of Fame with today's and all-time tables side by side](screenshots/hall-of-fame.png) |
+| Two players take turns | Hall of Fame (Today's and All-Time) |
+| ![The title page: our own title graphic under the credit text](screenshots/attract-title.png) | ![The attract demonstration: the ship has caught the falling humanoid for 500 points](screenshots/demo-rescue.png) |
+| Attract mode title page | Attract demo: the rescue |
+| ![The scoring screen: lander, mutant, baiter, bomber, pod and swarmer with their names and points](screenshots/demo-scoring.png) | |
+| Attract demo: the enemies and their points | |
+
+The screenshots are rendered by the game itself (`--screenshots screenshots/`, deterministic), so they can be regenerated whenever the visuals change.
+
+## Download
+
+Every push to `main` refreshes the **[latest pre-release](https://github.com/Harlock123/AVADefend/releases/tag/latest)**; version tags (`v0.1.0`, …) make proper [releases](https://github.com/Harlock123/AVADefend/releases). Each is a single self-contained program, no .NET install needed:
+
+| Platform | File |
+|---|---|
+| Windows (x64, x86, Arm64) | `AVADefend-win-x64.zip` (and `-win-x86`, `-win-arm64`) |
+| macOS (Apple Silicon, Intel) | `AVADefend-osx-arm64.tar.gz`, `AVADefend-osx-x64.tar.gz` |
+| Linux (x64, Arm64, Arm) | `AVADefend-linux-x64.tar.gz` (and `-linux-arm64`, `-linux-arm`) |
+
+Unzip or untar and run `Defender` (`Defender.exe` on Windows). The builds are not code-signed: on macOS run `xattr -d com.apple.quarantine Defender` once (or right-click → Open); on Windows choose *More info → Run anyway* if SmartScreen asks. `Defender --selftest` prints a quick check of graphics, sound and gamepad support without opening a window.
 
 **Documentation**
 
@@ -50,6 +81,7 @@ dotnet run --project src/Defender.Avalonia -- --autoplay      # a scripted pilot
 dotnet run --project src/Defender.Avalonia -- --audio-probe   # report the SDL audio status and play every sound, no window
 dotnet run --project src/Defender.Avalonia -- --export-sounds sounds/   # write every effect as a WAV file to audition
 dotnet run --project src/Defender.Avalonia -- --selftest      # windowless platform check: engine, renderer, native libs, data dir, audio, gamepad
+dotnet run --project src/Defender.Avalonia -- --screenshots screenshots/   # regenerate the README screenshots
 ```
 
 In the game:
@@ -59,28 +91,29 @@ In the game:
 | **1** or **F2** | Start a 1-player game |
 | **2** or **F3** | Start a 2-player game (players alternate on death) |
 | **F1** | Show the controls |
-| **F10** | Settings and key remapping |
+| **F10** or **F9** | Settings and key remapping |
 | **F11** | Fullscreen |
 
 ## Publish
 
+The release builds are single-file, self-contained programs (exactly what CI produces):
+
 ```bash
-# Windows x64, self-contained (builds; never run, see KNOWN_ISSUES.md)
-dotnet publish src/Defender.Avalonia -c Release -r win-x64 --self-contained true -o publish/win-x64
-
-# Linux, self-contained (linux-arm64 has been run; linux-x64 is the same command, untested)
-dotnet publish src/Defender.Avalonia -c Release -r linux-arm64 --self-contained true -o publish/linux-arm64
-
-# Framework-dependent, for any RID (needs the .NET 10 runtime installed).
-# osx-arm64 builds and bundles its native libraries; it has not been run and is unsigned (Gatekeeper will block it).
-dotnet publish src/Defender.Avalonia -c Release -r osx-arm64 --self-contained false -o publish/osx-arm64
+dotnet publish src/Defender.Avalonia/Defender.Avalonia.csproj -c Release -r linux-x64 --self-contained true \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true \
+  -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish/linux-x64
 ```
 
-The executable is called `Defender` (`Defender.exe` on Windows).
+Use `win-x64`, `win-x86`, `win-arm64`, `linux-arm64`, `linux-arm`, `osx-x64` or `osx-arm64` for the other platforms. The executable is called `Defender` (`Defender.exe` on Windows). The linux-arm64 single-file build has been run (window, sound, `--selftest`); the others are first exercised by CI.
 
-## Continuous integration
+## Continuous integration and releases
 
-`.github/workflows/ci.yml` builds and tests on Windows, Linux and macOS, publishes artifacts, and runs `--selftest` on each packaged build (a real runtime check of the native libraries on every OS). It has been written and checked as valid YAML, but it has **not run yet**: it runs once the repository is pushed to GitHub.
+`.github/workflows/build.yml` (the same scheme as AVABand and AVAUltima3):
+
+1. **test**: Release build with warnings as errors, then the full test suite.
+2. **publish**: single-file builds for the 8 platforms above, zipped (Windows) or tar.gz'd (others) with the README, CONTROLS and THIRD_PARTY notes.
+3. **selftest**: the Windows x64, macOS Arm64 and Linux x64 packages are downloaded onto real machines of each OS and started with `--selftest`.
+4. **release**: on `main`, replaces the rolling `latest` pre-release; on a `v*` tag, creates a proper release with generated notes.
 
 ## Repository map
 

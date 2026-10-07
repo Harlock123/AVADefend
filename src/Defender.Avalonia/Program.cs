@@ -11,6 +11,8 @@ internal static class Program
     {
         if (args.Contains("--audio-probe")) return AudioProbe();
         if (args.Contains("--selftest")) return SelfTest.Run();
+        int shots = Array.IndexOf(args, "--screenshots");
+        if (shots >= 0) return ScreenshotTool.Run(shots + 1 < args.Length ? args[shots + 1] : "screenshots");
         int ex = Array.IndexOf(args, "--export-sounds");
         if (ex >= 0)
         {
