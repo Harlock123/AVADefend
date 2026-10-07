@@ -48,6 +48,7 @@ public sealed class GameHost : IDisposable
     public List<string> Messages { get; } = new();
 
     public AttractDirector Attract { get; private set; } = null!;
+    private bool _wasInGame;
 
     /// <summary>Diagnostic/demo: when set, input comes from the scripted pilot instead of devices.</summary>
     public Autopilot? Autopilot { get; set; }
@@ -185,8 +186,12 @@ public sealed class GameHost : IDisposable
             if (Autopilot is not null) input = Autopilot.Next(Session) with { PausePressed = input.PausePressed };
             Session.Step(input);
             foreach (var snd in Session.Sounds) Audio.Play(snd);
-            if (Session.State == SessionState.Attract && Autopilot is null) Attract.Step();
-            else if (Attract.Phase != AttractPhase.Title || Attract.PhaseTimer != 0) Attract.Reset();
+            if (Session.State == SessionState.Attract && Autopilot is null)
+            {
+                if (_wasInGame) { Attract.ResetToHallOfFame(); _wasInGame = false; }
+                Attract.Step();
+            }
+            else _wasInGame = true;
         }
         Audio.SetLooping(SoundId.Thrust, Session.ThrustSoundOn && !Session.Paused);
         bool demo = Session.State == SessionState.Attract && Attract.Phase == AttractPhase.Demo && Attract.Demo is not null;

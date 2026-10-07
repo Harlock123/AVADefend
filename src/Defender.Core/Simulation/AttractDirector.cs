@@ -25,6 +25,14 @@ public sealed class AttractDirector
         Demo = null;
     }
 
+    /// <summary>After a game (and any initials entry) the original goes to the Hall of Fame (HALDIS), not the logo page.</summary>
+    public void ResetToHallOfFame()
+    {
+        Phase = AttractPhase.HallOfFame;
+        PhaseTimer = 0;
+        Demo = null;
+    }
+
     public void Step()
     {
         PhaseTimer++;

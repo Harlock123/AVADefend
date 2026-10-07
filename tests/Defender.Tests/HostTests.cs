@@ -184,6 +184,27 @@ public class HostTests : IDisposable
         Assert.False(s.PlanetExploding);
     }
 
+    [Fact]
+    public void AfterAGame_AttractResumesAtTheHallOfFame()
+    {
+        var h = NewHost();
+        Assert.Equal(AttractPhase.Title, h.Attract.Phase);         // power-on: logo page
+        h.Session.StartGame();
+        h.Frame(TimeSpan.FromMilliseconds(17));
+        for (int life = 0; life < 3; life++)
+        {
+            h.Session.RunUntil(() => h.Session.State == SessionState.Playing, 400);
+            var e = h.Session.TestSpawn(EnemyKind.Mutant, h.Session.Player.WorldX(h.Session.CameraX), h.Session.Player.PixelY);
+            e.Vx = e.Vy = 0; e.Nap = 1000;
+            h.Session.Step(default);
+            h.Session.RunUntil(() => h.Session.State != SessionState.Dying, 400);
+        }
+        h.Session.RunUntil(() => h.Session.State == SessionState.EnterInitials, 600);   // 450 points qualifies
+        h.Session.CommitPendingInitials();                                               // → attract
+        h.Frame(TimeSpan.FromMilliseconds(17));
+        Assert.Equal(AttractPhase.HallOfFame, h.Attract.Phase);
+    }
+
     [AvaloniaFact]
     public void HintBar_ShownOnlyInModern()
     {

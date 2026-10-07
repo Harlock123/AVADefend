@@ -304,21 +304,42 @@ public sealed partial class GameSession
         State = SessionState.EnterInitials;
         StateTimer = 0;
         InitialsCursor = 0;
-        Initials[0] = Initials[1] = Initials[2] = 'A';
+        Initials[0] = 'A'; Initials[1] = Initials[2] = ' ';   // first initial A, the others blank
+        _initialTimer = 0; _lastVertical = 0; _fireUpFrames = 5;
     }
 
-    private const string InitialsAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ .-";
+    // HALLOF (amode1.src:117-371): the stick cycles space and A-Z with wrap-around.
+    private const string InitialsAlphabet = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private int _repeatWait, _repeatDelay, _lastVertical, _fireUpFrames, _initialTimer;
 
     private void StepInitials(in PlayerInput input)
     {
-        if (StateTimer % 8 == 0 && input.Vertical != 0)
+        // Hold-to-repeat: the first step 3 frames after pushing, then delays 32, 21, 15, 12, 11, 10… (d = d/2 + 5 from 55).
+        if (input.Vertical != 0)
         {
-            int i = InitialsAlphabet.IndexOf(Initials[InitialsCursor]);
-            i = (i - input.Vertical + InitialsAlphabet.Length) % InitialsAlphabet.Length;
-            Initials[InitialsCursor] = InitialsAlphabet[i];
+            if (input.Vertical != _lastVertical) { _repeatWait = 3; _repeatDelay = 55; }
+            if (--_repeatWait == 0)
+            {
+                StepLetter(-input.Vertical);
+                _repeatDelay = _repeatDelay / 2 + 5;
+                _repeatWait = _repeatDelay;
+            }
         }
-        if (input.FirePressed || input.StartPressed) AdvanceInitial();
-        if (StateTimer > 60 * 60) CommitInitials(); // commit whatever is entered after a minute
+        _lastVertical = input.Vertical;
+
+        // Fire counts only after the button has been released for at least 5 frames.
+        if (input.FirePressed && _fireUpFrames >= 5) AdvanceInitial();
+        _fireUpFrames = input.FireHeld || input.FirePressed ? 0 : _fireUpFrames + 1;
+
+        // 40 s for the first initial, 20 s for each later one; then the entry is committed as it stands.
+        if (++_initialTimer > (InitialsCursor == 0 ? 40 : 20) * Arcade.TicksPerSecond) CommitInitials();
+    }
+
+    private void StepLetter(int delta)
+    {
+        int i = InitialsAlphabet.IndexOf(Initials[InitialsCursor]);
+        if (i < 0) i = 0;
+        Initials[InitialsCursor] = InitialsAlphabet[(i + delta + InitialsAlphabet.Length) % InitialsAlphabet.Length];
     }
 
     /// <summary>Lets the UI type initials directly (keyboard) as an alternative to the joystick.</summary>
@@ -326,13 +347,14 @@ public sealed partial class GameSession
     {
         if (State != SessionState.EnterInitials) return;
         c = char.ToUpperInvariant(c);
-        if (!InitialsAlphabet.Contains(c)) return;
+        if (c is not (>= 'A' and <= 'Z') && c != ' ') return;
         Initials[InitialsCursor] = c;
         AdvanceInitial();
     }
 
     private void AdvanceInitial()
     {
+        _initialTimer = 0;
         if (++InitialsCursor >= 3) CommitInitials();
     }
 

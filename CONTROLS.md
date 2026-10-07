@@ -76,7 +76,7 @@ Bindings are saved when Settings closes.
 
 ## Entering initials
 
-After a qualifying score, you can enter your initials in either of two ways:
+After a qualifying score, you can enter your initials in either of two ways (the first starts at A, the others blank):
 
-- Press Up/Down to choose each letter, then Fire to confirm it.
+- Press Up/Down to choose each letter (it cycles through a space and A–Z; holding speeds up, as on the arcade), then Fire to confirm it. Fire must have been released briefly before each press counts. You have 40 seconds for the first letter and 20 for each of the others.
 - Type the letters on the keyboard.

@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 188 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 194 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -163,6 +163,8 @@ Also added: `--selftest` (CI runs it on every packaged build) and F9 as a second
 | HUD at the original positions (score field, ships, bombs, 2-px border, window marker) | Impl, Observed |
 | Attract cycle: logo page with converging title, Hall of Fame layout, scripted rescue + roster demo | Impl, Tested, Observed |
 | Code coverage tooling; Core at 98% lines / 91% branches | Measured |
+| High-score entry per HALLOF (alphabet, repeat schedule, fire-release rule, timeouts, layout); attract resumes at the Hall of Fame after a game | Impl, Tested, Observed |
+| Bonus screen and 2-player prompt at the source's text positions | Impl, Observed |
 
 ## Next concrete tasks
 

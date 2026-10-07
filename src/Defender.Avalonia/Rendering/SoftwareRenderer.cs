@@ -52,7 +52,7 @@ public sealed class SoftwareRenderer
         }
         DrawPlayfield(s);
         DrawHud(s, false);
-        if (s.State == SessionState.LifeStart && s.PlayerCount == 2 && s.StateTimer < 128) CenterText(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 120, _pal[Pal.White]);
+        if (s.State == SessionState.LifeStart && s.PlayerCount == 2 && s.StateTimer < 128) Text(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 120, 128, _pal[Pal.White]);
         if (s.State == SessionState.TurnOver) { CenterText(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 112, _pal[Pal.White]); CenterText("GAME OVER", 124, _pal[Pal.White]); }
         if (s.State == SessionState.WaveComplete) DrawWaveComplete(s);
         if (s.Paused) { CenterText("PAUSED", 116, _pal[Pal.White]); CenterText("ESC / START TO RESUME", 128, _pal[Pal.Grey]); if (StatusLine is { } st) CenterText(st, 140, _pal[Pal.Yellow]); }
@@ -232,18 +232,16 @@ public sealed class SoftwareRenderer
         for (int i = firstShown; i < 6; i++) Text(digits[i].ToString(), baseX + i * 8, 28, c);
     }
 
+    /// <summary>BONUS (defa7.src:1786-1845) text positions; humanoids counted in from (120,160), 8 px apart.</summary>
     private void DrawWaveComplete(FrameSnapshot s)
     {
-        uint w = _pal[Pal.White];
-        CenterText("ATTACK WAVE " + s.Wave, 80, w);
-        CenterText("COMPLETED", 92, w);
-        CenterText("BONUS X " + s.WaveBonusPerHumanoid, 112, w);
-        int n = s.HumanoidsBonusCounted;
-        int x0 = CropX + (Width - n * 8) / 2;
-        for (int i = 0; i < n; i++) DrawSprite(Sprites.Humanoid, x0 + i * 8, 128);
+        uint w = _pal[Pal.Laser];   // message text is colour 1
+        if (s.Mode == GameMode.Modern) w = _pal[Pal.White];
+        Text("ATTACK WAVE " + s.Wave, 112, 80, w);
+        Text("COMPLETED", 122, 96, w);
+        Text("BONUS X " + s.WaveBonusPerHumanoid, 120, 144, w);
+        for (int i = 0; i < s.HumanoidsBonusCounted; i++) DrawSprite(Sprites.Humanoid, 120 + i * 8, 160);
     }
-
-    // ----- attract / initials ----------------------------------------------------------------------------
 
     /// <summary>Our own 120×24 title graphic (letters colour $C, drop shadow colour 2) built from our font.</summary>
     private static readonly Sprite TitleSprite = BuildTitle(Branding.Title);
@@ -360,21 +358,25 @@ public sealed class SoftwareRenderer
             }
     }
 
+    /// <summary>HALLOF (amode1.src:117-371) layout, with our own instruction wording.</summary>
     private void DrawInitials(FrameSnapshot s)
     {
-        uint w = _pal[Pal.White];
-        CenterText(s.InitialsPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 60, _pal[Pal.Yellow]);
-        CenterText("YOU HAVE QUALIFIED FOR", 80, w);
-        CenterText("THE HALL OF FAME", 92, w);
-        CenterText("SCORE " + s.InitialsScore, 110, _pal[Pal.Laser]);
-        CenterText("UP/DOWN TO CHOOSE, FIRE TO ENTER", 130, _pal[Pal.Grey]);
-        CenterText("(OR TYPE THEM)", 140, _pal[Pal.Grey]);
-        int x0 = CropX + (Width - 3 * 18) / 2;
+        DrawHud(s, attract: false);
+        uint w = s.Mode == GameMode.Modern ? _pal[Pal.White] : _pal[Pal.Laser];
+        Text(s.InitialsPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 124, 56, _pal[Pal.Yellow]);
+        Text("YOU HAVE QUALIFIED FOR", 40, 88, w);
+        Text("THE HALL OF FAME", 40, 98, w);
+        Text("SELECT INITIALS WITH UP AND DOWN", 40, 118, w);
+        Text("PRESS FIRE TO ENTER EACH ONE", 40, 128, w);
+        Text("(OR TYPE THEM)", 40, 148, _pal[Pal.Grey]);
         for (int i = 0; i < 3; i++)
         {
-            uint c = i == s.InitialsCursor && (s.StateTimer / 8) % 2 == 0 ? _pal[Pal.Yellow] : w;
-            Text(s.Initials[i].ToString(), x0 + i * 18, 160, c, 2);
-            if (i == s.InitialsCursor) HLine(x0 + i * 18, x0 + i * 18 + 9, 176, _pal[Pal.Yellow]);
+            int x = 140 + i * 16;
+            Text(s.Initials[i].ToString(), x, 172, _pal[Pal.White]);
+            // The active underline blinks (colour D vs black every 15 frames); the others are steady.
+            bool on = i != s.InitialsCursor || (s.StateTimer / 15) % 2 == 0;
+            if (on) for (int u = 0; u < 8; u++) { Plot(x + u, 183, _pal[Pal.BomberD]); Plot(x + u, 184, _pal[Pal.BomberD]); }
         }
     }
+
 }
