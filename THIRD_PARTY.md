@@ -39,6 +39,7 @@ Every audiovisual asset in the game was made for this project. **Nothing was ext
 |---|---|---|
 | Sprites (ship, lander ×3, mutant, baiter, bomber, pod, swarmer, humanoid, mine, shot, HUD icons) | Original pixel art, drawn at the sizes documented in the source and in RESEARCH.md | `src/Defender.Core/Simulation/Sprites.cs` |
 | 5×7 font | Original | `src/Defender.Avalonia/Rendering/PixelFont.cs` |
+| Application icon (`.ico`, 256-px PNG) | Generated from our own ship sprite by `tools/make_icon.py` | `src/Defender.Avalonia/Assets/` |
 | Terrain profile | Generated procedurally (seed 1981), following the original's format constraints. The Williams terrain table was **not** copied | `src/Defender.Core/Simulation/Terrain.cs` |
 | Colour tables and cycle sequences | Our own choices, in the same 8-bit BBGGGRRR format | `World.cs` |
 | Palette to RGB levels | Computed from the MAME resistor-network description (MAME is BSD-3-Clause; only the numbers were used) | `SoftwareRenderer.cs` |

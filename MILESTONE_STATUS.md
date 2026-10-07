@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 139 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 143 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -123,6 +123,14 @@ A line-by-line comparison against the original routines found 18 discrepancies. 
 | Wave-bonus screen timing from source (4 frames per humanoid, 128-frame hold, cleared screen); 128-piece death explosion | Impl, Tested |
 | `--export-sounds` WAV export; peak limiter (removed hard clipping in 3 effects); explosion levels raised | Impl, Tested; levels measured, not listened to |
 | macOS osx-arm64 framework-dependent publish | Builds; not run; unsigned |
+
+## Round 6
+
+| Item | Status |
+|---|---|
+| Laser collision probe matches LCOL (16×1, direction-dependent placement) | Impl, Tested |
+| Application icon (window + Windows .exe) from our own sprite; generator script in `tools/` | Impl; window icon load Tested |
+| Modern bold scanner blips | Impl |
 
 ## Next concrete tasks
 

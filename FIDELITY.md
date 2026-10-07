@@ -24,6 +24,7 @@ Classic and Modern run the **same engine, wave tables, physics and scoring**. Ev
 | Flashes / colour cycling | As the original (V/I) | Optional suppression: no background flashes, and colour cycling slowed to 1/4–1/5 speed (M) |
 | Game speed | 100% | 50–100%, an accessibility option. Shown on the HUD as `M 0.7X` (M) |
 | Scaling | Nearest-neighbour | Nearest-neighbour or optional bilinear (M) |
+| Scanner blips | 2×2 (V) | Optional bold 3×3 blips (M) |
 | Control reminder | None (title-screen hints only) | Optional one-line reminder bar below the picture (M) |
 | Pause | Allowed. Pause does not alter rules or timing, but the cabinet had no pause (M, disclosed) | Allowed; also auto-pauses when the window loses focus (M) |
 | Suspend / resume | None. High scores only, as on the arcade | Three selectable slots; written on close mid-game and **consumed on resume** (M) |
@@ -50,7 +51,7 @@ Columns:
 | Thrust/drag | V −= V/64; +3/frame²; clamp 256 (V) | Exact 24-bit integer arithmetic | Same | `Thrust_*`, `Drag_*` | none |
 | Ship screen X / reverse | Base 64/224 px plus a lead of V/4 px. Slide 2 px/frame with scroll compensation. Reverse on press only, 5-frame re-arm (V) | Exact | Same | `Reverse_*`, `ShipLeadsForward_AtSpeed`, `ScrollSpeed_*` | Re-arm uses a 5-frame cooldown rather than "release + 5" (R, equivalent with edge input) |
 | Vertical | No inertia; 1 → 2 px/frame (+8/256 per frame); Y 43–238 (V) | Exact | Same | `Vertical_*` | none |
-| Laser | ≤ 4 shots; edge-triggered; head 8 px/frame; screen space; one kill each (V) | Exact. The fizzle and tail rates are visual only | Hold-to-fire in Modern only (M) | `LaserTests` | The original tests an 8×1 probe; ours sweeps the head segment (I) |
+| Laser | ≤ 4 shots; edge-triggered; head 8 px/frame, fizzle 6, tail 2; screen space; ends at column $98 or ≤ 5; each frame tests the 16×1 probe LASP1 (right: 12 px behind to 4 px ahead of the head; left: 16 px from the head); one kill each (V) | As described | Hold-to-fire in Modern only (M) | `LaserTests`, `LaserProbe_Is16x1_PlacedPerDirection` | Masks tested at 1-px rather than 2-px resolution; nearest object wins instead of object-list order (R, rarely differs) |
 | Smart bomb | 3 at start; +1 per extra life; kills on-screen enemies that are not materialising (appearing objects carry OTYP bit 1; appear runs only on screen); humanoids and shells unaffected; 2 white flashes; 10-frame re-arm (V) | Exact | Flash suppressible in Modern | `SmartBomb_*` | none |
 | Hyperspace | Blank 15 frames with all movement frozen; the wave may still end; clear shells; random BGL, facing and Y; velocity 0; appear for 40 frames; **die if rnd > 192** (V) | Exact | Same | `Hyperspace_*` (statistical: 2000 trials, expected 24.6%, bound 21–28%) | Uses a different RNG |
 | Enemy shots | ≤ 20 shells (bullets and mines), all screen-space: **mines die once off screen**; aimed to arrive in about 64 frames with ±16 px jitter; adds player velocity on ~53% of shots; life 160 frames (V/I) | As described | Same | `EnemyShot_IsAimed_AndPooledTo20` | none significant |

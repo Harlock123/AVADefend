@@ -34,5 +34,5 @@ The list of open questions is in RESEARCH.md. Briefly:
 
 ## Implementation notes
 
-- **Laser hits:** we test the whole segment the beam's head swept that frame, at 1 px resolution. The original tests an 8×1 probe at 2 px resolution. The result can differ by a pixel at the edges.
+- **Laser hits:** the probe now matches the original's 16×1 placement, but masks are compared at 1-px rather than 2-px resolution, and when two objects share the probe the nearer one dies rather than the first in the original's object list.
 - **Off-screen enemies:** they are simulated every frame. The original updated them at 8× velocity every 8 frames. The average motion is the same; only the granularity differs.
