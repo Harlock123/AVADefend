@@ -134,7 +134,7 @@ public sealed partial class GameSession
         _firstGexec = false;
 
         int remaining = EnemiesRemainingForWave;
-        if (remaining == 0 && Player.Alive && !Player.InHyperspace)
+        if (remaining == 0 && Player.Alive && !Player.InHyperspace && !TestHoldWave)
         {
             BeginWaveComplete();
             return;
@@ -144,7 +144,7 @@ public sealed partial class GameSession
         int ufo = Params[WaveVar.BaiterTime];
         if (remaining <= 3) _baiterTimer = Math.Min(_baiterTimer, ufo / 4 + 1);
         else if (remaining <= 8) _baiterTimer = Math.Min(_baiterTimer, ufo / 2 + 1);
-        if (--_baiterTimer <= 0)
+        if (--_baiterTimer <= 0 && !TestHoldWave)
         {
             if (Enemies.Count(e => !e.Dead && e.Kind == EnemyKind.Baiter) < Arcade.MaxBaiters) SpawnBaiter();
             _baiterTimer = remaining >= 4 ? ufo : Rng.Next(ufo / 4 + 1) + 1;
