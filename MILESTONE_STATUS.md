@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 116 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 135 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -109,6 +109,10 @@ Updated 2026-10-07.
 | Cocktail flip: picture rotated 180° on player two's turns (setting, both presets) | Impl; not observed |
 | Three selectable suspend slots (Modern); slot descriptions in Settings; picking a full slot on the title screen resumes it | Impl, Tested |
 | Worst-case performance test: 45 enemies, 20 shells, firing | Tested: sim + snapshot + render average 0.045 ms, worst 0.73 ms per frame (Debug, this machine) |
+
+## Round 4: source-fidelity audit
+
+A line-by-line comparison against the original routines found 18 discrepancies. All are fixed, each with a regression test (`AuditRegressionTests`). Highlights: walking humanoids can be shot; mutants shoot from their avoid branch and their seek window was mirrored; landers shoot while descending and lifting; humanoids are re-placed every life; enemies keep moving during the death glow; mines only appear and live on screen; wave speeds never carry across a byte; the 2-player turn-over message and life-start timings. Status: Impl, Tested, gameplay Observed via autoplay.
 
 ## Next concrete tasks
 

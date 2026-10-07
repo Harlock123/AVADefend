@@ -106,15 +106,25 @@ This page summarises those dossiers. Where this page and a dossier disagree, the
 
 None of this behaviour is used.
 
+## Source-fidelity audit (second pass)
+
+After the first implementation we ran a line-by-line comparison of our engine against the original routines. It found 18 discrepancies, all now fixed and covered by `AuditRegressionTests`. It also resolved most open questions:
+
+| Question | Answer from the source |
+|---|---|
+| Can walking humanoids be shot? | **Yes.** The laser scan does not skip humanoids; `ASTKIL` ignores only contact with the ship (defb6.src:384-397). The hit gives no points and can blow up the planet. |
+| Does ramming score the enemy? | **Yes.** COLIDE calls the enemy's own kill routine before the player dies (defa7.src:3132-3152). |
+| Does a shot hitting the player score 25? | **Yes.** The shell kill routine `BKIL` scores $25 (defa7.src:2700-2702, 3143-3146). |
+| Mutant seek window | `player − mutant` within −380..+1412 units (≈ −12..+44 px) (defb6.src:855-858). |
+| Bomber squad layout | Members $180 units apart at player X + $8000, Y = cruise altitude = $50, no materialise; nudge −32..+31 (defb6.src:977-1116). |
+| Death and restart (PLSAV/PLRES) | Counts are saved at the hit. Swarmers, mutants, pods and bombers are re-created at the next life; landers stay in reserve; humanoids are re-placed every life (defa7.src:1491-1585). |
+| Death timing | 32-frame glow during which enemies keep moving; 2 white frames; ~108 explosion frames; then (2-player only) "PLAYER n" for 128 frames and a 96-frame pause. |
+
 ## Open questions
 
 These are also tracked in KNOWN_ISSUES.md.
 
 1. **Random-number generator.** The exact RNG (a 3-byte LFSR) is not replicated. We use xorshift32. This matters only for byte-exact replay against MAME.
-2. **Points on player death.** Whether ramming an enemy scores it, and whether a shot hitting the player awards 25, are **inferred** from the kill routines and not observed in play. Both are implemented as inferred.
-3. **Mutant targeting window.** The mutant "seek when within −12..+44 px" window is implemented literally. The sign convention is inferred.
-4. **Bomber details.** The size of the bomber's random nudge is unclear, as is the exact spacing of bombers within a squad.
-5. **Death restart (PLSAV).** How surviving enemies are re-introduced after a player death is partly inferred. Ours: survivors return to the reserves, then re-enter.
-6. **Death sequence timing.** The world-freeze timing during the player's death is reconstructed.
-7. **Attract-mode demo.** The original attract-mode demo flight was not studied.
-8. **Shootable humanoids.** Whether walking humanoids can be shot is unverified. Ours: no. Airborne humanoids can be shot (verified for falling ones).
+2. **Smart bomb vs materialising enemies.** Whether the bomb hits enemies that are still materialising is unresolved. Ours: they are immune.
+3. **Bomber off-screen altitude correction.** As written, it pushes bombers *away* from their cruise altitude, so they drift and wrap vertically. We implement it as written; it may be an original quirk.
+4. **Attract-mode demo.** The original attract-mode demo flight was not studied.

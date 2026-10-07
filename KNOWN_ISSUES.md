@@ -15,16 +15,9 @@
 The list of open questions is in RESEARCH.md. Briefly:
 
 - The RNG does not match the original byte for byte, so runs cannot be compared exactly against MAME.
-- These details are inferred from the code, not observed in play:
-  - points when ramming an enemy;
-  - 25 points when a shot hits the player;
-  - the sign convention of the mutant's "seek" window.
-- These are reconstructions:
-  - bomber nudge size and squad spacing;
-  - how enemies come back after the player dies (PLSAV);
-  - timing of the death and bonus screens;
-  - planet-explosion debris visuals.
-- Whether walking humanoids can be shot is unknown. Ours cannot.
+- A second, line-by-line audit against the source fixed 18 discrepancies and settled the earlier "inferred" items: ramming scores, a shot hitting the player scores 25, walking humanoids can be shot, and the mutant window, bomber layout and death/restart flow are now as written (see RESEARCH.md).
+- Still open: whether a smart bomb hits enemies that are still materialising (ours: no), and the off-screen bomber altitude correction, which as written pushes bombers away from their cruise height (implemented as written).
+- Reconstructions that remain: planet-explosion debris visuals and the bonus-screen timing.
 - The terrain profile is deliberately not the arcade's (it is generated under the same constraints).
 - The sprite shapes and colour tables are original approximations, not the arcade's.
 - High scores: like the original we keep "Today's" (8, reset daily) and "All-Time" tables, but All-Time holds 10 rather than 8, as the brief asked.
@@ -32,7 +25,7 @@ The list of open questions is in RESEARCH.md. Briefly:
 ## Deferred and missing
 
 - **Attract-mode demo flight.** Implemented, but as a reconstruction: our autopilot flies it, and the original's demo sequence was not studied.
-- **2-player play.** Implemented without the original's "PLAYER n GAME OVER" interstitial; gamepad Start2 defaults to pressing the right stick, which is awkward.
+- **2-player play.** Implemented, including the "PLAYER n / GAME OVER" turn-over. Gamepad Start2 defaults to pressing the right stick, which is awkward.
 - **Cocktail flip.** Implemented as a setting (rotates the picture 180° on player two's turns), but not seen on screen. The cocktail cabinet's control-panel switching is not modelled.
 - **Gamepad rebinding UI.** Implemented, but untested on hardware (no controller available). The swap logic is unit-tested.
 - **Classic crash-recovery save.** Not implemented. The brief allows it but does not require it.
