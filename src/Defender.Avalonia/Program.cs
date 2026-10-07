@@ -10,6 +10,7 @@ internal static class Program
     public static int Main(string[] args)
     {
         if (args.Contains("--audio-probe")) return AudioProbe();
+        if (args.Contains("--selftest")) return SelfTest.Run();
         int ex = Array.IndexOf(args, "--export-sounds");
         if (ex >= 0)
         {

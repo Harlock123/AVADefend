@@ -43,13 +43,16 @@ jobs:
           dotnet-version: 10.0.x
       - name: Publish
         run: dotnet publish src/Defender.Avalonia -c Release -r ${{ matrix.rid }} --self-contained ${{ matrix.sc }} -o publish/${{ matrix.rid }}
-      - name: Audio probe smoke run (no window; tolerates missing audio device)
+      - name: Self-test the packaged build (engine, renderer, native libs, data dir; audio/gamepad reported)
         shell: bash
         run: |
-          exe=publish/${{ matrix.rid }}/Defender
-          [ -f "$exe.exe" ] && exe="$exe.exe"
-          if [ "${{ matrix.sc }}" = "false" ]; then exe="dotnet publish/${{ matrix.rid }}/Defender.dll"; fi
-          $exe --audio-probe || echo "audio unavailable on runner (expected on CI)"
+          if [ "${{ matrix.sc }}" = "false" ]; then
+            dotnet publish/${{ matrix.rid }}/Defender.dll --selftest
+          elif [ -f publish/${{ matrix.rid }}/Defender.exe ]; then
+            publish/${{ matrix.rid }}/Defender.exe --selftest
+          else
+            publish/${{ matrix.rid }}/Defender --selftest
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: defender-${{ matrix.rid }}

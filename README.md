@@ -49,6 +49,7 @@ Diagnostic flags:
 dotnet run --project src/Defender.Avalonia -- --autoplay      # a scripted pilot plays (for screenshots and soak runs)
 dotnet run --project src/Defender.Avalonia -- --audio-probe   # report the SDL audio status and play every sound, no window
 dotnet run --project src/Defender.Avalonia -- --export-sounds sounds/   # write every effect as a WAV file to audition
+dotnet run --project src/Defender.Avalonia -- --selftest      # windowless platform check: engine, renderer, native libs, data dir, audio, gamepad
 ```
 
 In the game:
@@ -79,7 +80,7 @@ The executable is called `Defender` (`Defender.exe` on Windows).
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` builds and tests on Windows, Linux and macOS, then publishes artifacts. It has been written and checked as valid YAML, but it has **not run yet**: it runs once the repository is pushed to GitHub.
+`.github/workflows/ci.yml` builds and tests on Windows, Linux and macOS, publishes artifacts, and runs `--selftest` on each packaged build (a real runtime check of the native libraries on every OS). It has been written and checked as valid YAML, but it has **not run yet**: it runs once the repository is pushed to GitHub.
 
 ## Repository map
 

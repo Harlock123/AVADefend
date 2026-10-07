@@ -6,6 +6,8 @@
 - **Windows (win-x64):** a self-contained publish **builds**, and the output contains `Defender.exe`, `SDL2.dll` and the Skia and HarfBuzz native libraries. It has **never been run**.
 - **macOS:** the osx-arm64 framework-dependent build **compiles** and bundles its native libraries, but has **never been run**. It is not code-signed or notarised, so Gatekeeper will block it until signed or explicitly allowed.
 - **Linux x64:** not built and not run. The Linux arm64 build (self-contained) was run.
+- **Windows keyboard (unverified risk):** F10 (Settings) and Alt (a default Fire key) are Windows' menu-activation keys. The app marks them handled, but whether that fully prevents Windows' menu mode (a beep or a stalled key) needs checking on Windows. If it is a problem, rebind Fire away from Alt; Settings is also reachable after rebinding nothing else.
+- **First run on a new OS:** `Defender --selftest` prints a pass/fail report without opening a window. CI runs it on the packaged Windows, Linux and macOS builds.
 - **Gamepad:** tested against an **SDL virtual controller** (real SDL GameController code path): hot-plug add and remove, default mapping, deadzone and stick steering all pass. **No physical controller was tested**, so vendor-specific mappings, analog feel and the rebinding UI with real hardware are unverified.
 - **Audio:** SDL audio opens on the development machine and the mixer is tested. Every effect is peak-limited to 0.9 (the three big explosions used to hard-clip), and levels were checked numerically. Nobody has *listened* yet; `--export-sounds <dir>` writes them all as WAV files for that.
 - **Native Wayland:** the window runs through XWayland. Avalonia's native Wayland backend was not enabled or tested.
