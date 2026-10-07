@@ -24,7 +24,7 @@ public sealed class GameView : Control
         Host = host;
         Renderer = new SoftwareRenderer
         {
-            HighScoreProvider = () => Host.Session.HighScores.Entries.Select(e => (e.Initials, e.Score)).ToList(),
+            HighScoreProvider = () => Host.Session.HighScores,
         };
         ClipToBounds = true;
     }

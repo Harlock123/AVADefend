@@ -26,7 +26,7 @@ public sealed class SoftwareRenderer
     public bool ShowControlHints { get; set; } = true;
     public string? StatusLine { get; set; }
     public double GameSpeed { get; set; } = 1;
-    public Func<IReadOnlyList<(string Initials, int Score)>>? HighScoreProvider { get; set; }
+    public Func<Core.Scoring.HighScoreBook?>? HighScoreProvider { get; set; }
 
     public uint Argb(byte paletteByte) => _byteToArgb[paletteByte];
 
@@ -224,18 +224,28 @@ public sealed class SoftwareRenderer
         }
         else
         {
-            CenterText("HALL OF FAME", 96, w);
-            var hs = HighScoreProvider?.Invoke() ?? [];
-            for (int i = 0; i < Math.Min(hs.Count, 10); i++)
-            {
-                string line = $"{i + 1,2} {hs[i].Initials} {hs[i].Score,7}";
-                Text(line, CropX + (Width - PixelFont.Measure(line)) / 2, 110 + i * 9, i == 0 ? _pal[Pal.Yellow] : g);
-            }
-            if (hs.Count == 0) CenterText("NO SCORES YET", 130, g);
+            CenterText("HALL OF FAME", 92, w);
+            var book = HighScoreProvider?.Invoke();
+            DrawTable("TODAYS", "GREATEST", book?.Today.Entries, 8, CropX + 14);
+            DrawTable("ALL TIME", "GREATEST", book?.AllTime.Entries, 10, CropX + 156);
         }
         if ((t / 30) % 2 == 0) CenterText("PRESS 1 OR F2 TO START", 214, _pal[Pal.Yellow]);
         if (ShowControlHints) CenterText("F1 CONTROLS   F10 SETTINGS   F11 FULLSCREEN", 230, g);
         if (StatusLine is { } st) Text(st.Length > 48 ? st[..48] : st, CropX + 2, Arcade.ScannerBottom + 4, _pal[Pal.Grey]);
+    }
+
+    /// <summary>One column of the hall of fame (the arcade showed Today's and All-Time side by side).</summary>
+    private void DrawTable(string title1, string title2, IReadOnlyList<Core.Scoring.HighScoreEntry>? entries, int rows, int gx)
+    {
+        uint w = _pal[Pal.White], g = _pal[Pal.Grey];
+        Text(title1, gx + (122 - PixelFont.Measure(title1)) / 2, 106, _pal[Pal.Yellow]);
+        Text(title2, gx + (122 - PixelFont.Measure(title2)) / 2, 115, _pal[Pal.Yellow]);
+        for (int i = 0; i < rows; i++)
+        {
+            var e = entries is not null && i < entries.Count ? entries[i] : null;
+            string line = e is null ? $"{i + 1,2}  ---       " : $"{i + 1,2} {e.Initials} {e.Score,7}";
+            Text(line, gx, 128 + i * 9, e is null ? g : (i == 0 ? _pal[Pal.Yellow] : w));
+        }
     }
 
     private void DrawInitials(FrameSnapshot s)

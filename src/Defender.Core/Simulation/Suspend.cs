@@ -61,7 +61,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>Builds a paused session from suspend data. Throws <see cref="InvalidDataException"/> if inconsistent.</summary>
-    public static GameSession Restore(SuspendData d, GamePolicy policy, Scoring.HighScoreTable? highScores = null)
+    public static GameSession Restore(SuspendData d, GamePolicy policy, Scoring.HighScoreBook? highScores = null)
     {
         if (d.Params.Length != Enum.GetValues<WaveVar>().Length || d.Reserves.Length != 5 || d.Counters.Length != 12
             || d.Humanoids.Count != Arcade.HumanoidCount || d.Palette.Length != 16 || d.Stars.Count == 0

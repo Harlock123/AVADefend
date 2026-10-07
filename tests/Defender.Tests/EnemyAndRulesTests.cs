@@ -289,8 +289,8 @@ public class ScoringAndLivesTests
         s.RunUntil(() => s.State == SessionState.EnterInitials, 400);
         foreach (var c in "ZED") s.TypeInitial(c);
         Assert.Equal(SessionState.Attract, s.State);
-        Assert.Equal("ZED", s.HighScores.Entries[0].Initials);
-        Assert.Equal(1234 + 3 * 150, s.HighScores.Entries[0].Score);
+        Assert.Equal("ZED", s.HighScores.AllTime.Entries[0].Initials);
+        Assert.Equal(1234 + 3 * 150, s.HighScores.AllTime.Entries[0].Score);
     }
 
     [Fact]

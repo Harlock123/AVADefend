@@ -52,9 +52,9 @@ public sealed class GameHost : IDisposable
         _hsStore = _storage.HighScores(Settings.Mode.ToString());
         var loaded = _hsStore.Load();
         if (loaded.Message is { } m) Messages.Add(m);
-        var table = new HighScoreTable();
-        table.LoadFrom(loaded.Value.Entries);
-        var s = new GameSession(policy: PolicyFor(Settings), highScores: table);
+        var book = new HighScoreBook();
+        book.Load(loaded.Value.Entries, loaded.Value.Today ?? new(), loaded.Value.ParsedTodayDate);
+        var s = new GameSession(policy: PolicyFor(Settings), highScores: book);
         s.HighScoreCommitted += _ => SaveHighScores();
         return s;
     }
@@ -65,7 +65,8 @@ public sealed class GameHost : IDisposable
 
     public void SaveHighScores()
     {
-        try { _hsStore.Save(new HighScoreFile { Entries = Session.HighScores.Entries.ToList() }); }
+        var b = Session.HighScores;
+        try { _hsStore.Save(new HighScoreFile { Entries = b.AllTime.Entries.ToList(), Today = b.Today.Entries.ToList(), TodayDate = b.TodayDate.ToString("yyyy-MM-dd") }); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Messages.Add("Could not save high scores: " + ex.Message); }
     }
 

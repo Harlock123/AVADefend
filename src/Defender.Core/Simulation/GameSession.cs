@@ -21,14 +21,14 @@ public sealed partial class GameSession
     private readonly List<SoundId> _sounds = new();
 
     public GameSession(GameRules? rules = null, GamePolicy? policy = null, IRandom? rng = null,
-                       WaveTable? table = null, Terrain? terrain = null, HighScoreTable? highScores = null)
+                       WaveTable? table = null, Terrain? terrain = null, HighScoreBook? highScores = null)
     {
         Rules = (rules ?? new GameRules()).Validated();
         Policy = policy ?? GamePolicy.Classic;
         Rng = rng ?? new XorShiftRandom((uint)Environment.TickCount);
         _table = table ?? WaveTable.Default;
         Terrain = terrain ?? new Terrain();
-        HighScores = highScores ?? new HighScoreTable();
+        HighScores = highScores ?? new HighScoreBook();
         for (int i = 0; i < Humanoids.Length; i++) Humanoids[i] = new Humanoid();
         for (int i = 0; i < 16; i++) Stars.Add(new Star());
         ResetPalette();
@@ -40,7 +40,7 @@ public sealed partial class GameSession
     public GamePolicy Policy { get; set; }
     public IRandom Rng { get; }
     public Terrain Terrain { get; }
-    public HighScoreTable HighScores { get; }
+    public HighScoreBook HighScores { get; }
     public WaveTable Table => _table;
 
     public SessionState State { get; private set; }
@@ -306,9 +306,10 @@ public sealed partial class GameSession
 
     private void CommitInitials()
     {
-        var entry = new HighScoreEntry(new string(Initials), Score, Wave, DateTime.UtcNow);
-        PendingRank = HighScores.Insert(entry);
-        if (PendingRank >= 0) HighScoreCommitted?.Invoke(HighScores.Entries[PendingRank]);
+        var (allRank, todayRank) = HighScores.Insert(new string(Initials), Score, Wave);
+        PendingRank = allRank;
+        if (allRank >= 0) HighScoreCommitted?.Invoke(HighScores.AllTime.Entries[allRank]);
+        else if (todayRank >= 0) HighScoreCommitted?.Invoke(HighScores.Today.Entries[todayRank]);
         EnterAttract();
     }
 

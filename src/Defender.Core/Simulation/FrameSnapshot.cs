@@ -83,7 +83,7 @@ public sealed partial class GameSession
     {
         s.State = State; s.StateTimer = StateTimer; s.Paused = Paused; s.Mode = Policy.Mode;
         s.Score = Score; s.Lives = Lives; s.SmartBombs = SmartBombs; s.Wave = Wave;
-        s.HighScore = HighScores.Entries.Count > 0 ? HighScores.Entries[0].Score : 0;
+        s.HighScore = HighScores.Best;
         s.PlanetActive = PlanetActive;
         s.HumanoidsAlive = HumanoidsAlive;
         s.WaveBonusPerHumanoid = WaveBonusPerHumanoid;
