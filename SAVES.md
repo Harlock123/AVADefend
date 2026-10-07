@@ -4,9 +4,11 @@
 
 | OS | Directory |
 |---|---|
-| Windows | `%APPDATA%\Defender1981\` |
-| Linux | `$XDG_CONFIG_HOME/Defender1981/`, or `~/.config/Defender1981/` if that variable is not set |
-| macOS | `~/.config/Defender1981/` (the same .NET resolution as Linux) |
+| Windows | `%APPDATA%\AVADefend\` |
+| Linux | `$XDG_CONFIG_HOME/AVADefend/`, or `~/.config/AVADefend/` if that variable is not set |
+| macOS | `~/.config/AVADefend/` (the same .NET resolution as Linux) |
+
+Earlier builds used a folder named `Defender1981`. On first launch, if that folder exists and `AVADefend` does not, it is renamed to `AVADefend`, so settings, high scores and suspend slots carry over. An existing `AVADefend` folder is never overwritten.
 
 ## Files
 

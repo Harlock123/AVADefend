@@ -23,6 +23,8 @@ public sealed class GameHost : IDisposable
 
     public GameHost(string? dataDir = null, ISoundEngine? audio = null, bool enableGamepad = true)
     {
+        if (dataDir is null && AppPaths.MigrateLegacyDataDirectory(AppPaths.LegacyDataDirectory(), AppPaths.DefaultDataDirectory()) is { } moved)
+            Messages.Add(moved);
         _storage = new Storage(dataDir ?? AppPaths.DefaultDataDirectory());
         _settingsStore = _storage.Settings();
         var settings = _settingsStore.Load();

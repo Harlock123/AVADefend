@@ -9,6 +9,9 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Before anything touches the data folder (game, --selftest …): carry over a pre-rename Defender1981 folder.
+        Infrastructure.Persistence.AppPaths.MigrateLegacyDataDirectory(
+            Infrastructure.Persistence.AppPaths.LegacyDataDirectory(), Infrastructure.Persistence.AppPaths.DefaultDataDirectory());
         if (args.Contains("--audio-probe")) return AudioProbe();
         if (args.Contains("--selftest")) return SelfTest.Run();
         int shots = Array.IndexOf(args, "--screenshots");

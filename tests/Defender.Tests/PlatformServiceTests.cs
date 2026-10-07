@@ -15,14 +15,53 @@ public class AppPathsTests
         try
         {
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", "/tmp/xdg-test");
-            Assert.Equal("/tmp/xdg-test/Defender1981", AppPaths.DefaultDataDirectory());
+            Assert.Equal("/tmp/xdg-test/AVADefend", AppPaths.DefaultDataDirectory());
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", "relative/path");   // not absolute: ignored per spec
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            Assert.Equal(Path.Combine(home, ".config", "Defender1981"), AppPaths.DefaultDataDirectory());
+            Assert.Equal(Path.Combine(home, ".config", "AVADefend"), AppPaths.DefaultDataDirectory());
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", null);
-            Assert.Equal(Path.Combine(home, ".config", "Defender1981"), AppPaths.DefaultDataDirectory());
+            Assert.Equal(Path.Combine(home, ".config", "AVADefend"), AppPaths.DefaultDataDirectory());
         }
         finally { Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", old); }
+    }
+}
+
+public class LegacyDataMigrationTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "defender-migrate-" + Guid.NewGuid().ToString("N"));
+
+    [Fact]
+    public void OldFolder_IsRenamed_KeepingItsFiles()
+    {
+        var oldDir = Path.Combine(_root, AppPaths.LegacyAppFolder);
+        var newDir = Path.Combine(_root, AppPaths.AppFolder);
+        Directory.CreateDirectory(oldDir);
+        File.WriteAllText(Path.Combine(oldDir, "highscores-classic.json"), "{}");
+        Assert.NotNull(AppPaths.MigrateLegacyDataDirectory(oldDir, newDir));
+        Assert.False(Directory.Exists(oldDir));
+        Assert.True(File.Exists(Path.Combine(newDir, "highscores-classic.json")));
+    }
+
+    [Fact]
+    public void ExistingNewFolder_IsNeverOverwritten()
+    {
+        var oldDir = Path.Combine(_root, AppPaths.LegacyAppFolder);
+        var newDir = Path.Combine(_root, AppPaths.AppFolder);
+        Directory.CreateDirectory(oldDir);
+        Directory.CreateDirectory(newDir);
+        File.WriteAllText(Path.Combine(newDir, "settings.json"), "new");
+        Assert.Null(AppPaths.MigrateLegacyDataDirectory(oldDir, newDir));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(newDir, "settings.json")));
+        Assert.True(Directory.Exists(oldDir));     // left alone
+    }
+
+    [Fact]
+    public void NothingToDo_WhenThereIsNoOldFolder() =>
+        Assert.Null(AppPaths.MigrateLegacyDataDirectory(Path.Combine(_root, "nope"), Path.Combine(_root, AppPaths.AppFolder)));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, true);
     }
 }
 

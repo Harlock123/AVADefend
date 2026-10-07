@@ -15,6 +15,12 @@ on:
 permissions:
   contents: write
 
+# A newer push to the same branch cancels an older run still in progress, so the rolling "latest"
+# release can never be overwritten by an older build that finished later.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
