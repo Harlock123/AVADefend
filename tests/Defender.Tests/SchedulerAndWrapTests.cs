@@ -47,4 +47,21 @@ public class SchedulerAndWrapTests
     [InlineData(8, 2040, -16)]    // across the left seam
     [InlineData(0, 1024, 1024)]
     public void Delta_IsShortestSignedPath(int from, int to, int expected) => Assert.Equal(expected, WorldMath.Delta(from, to, 2048));
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(65535, 65535)]
+    [InlineData(65536, 0)]        // right seam
+    [InlineData(-1, 65535)]       // left seam
+    [InlineData(65536 + 100, 100)]
+    public void EngineWrapUnits_HandlesBothSeams(int x, int expected) => Assert.Equal(expected, WorldMath.WrapUnits(x));
+
+    [Theory]
+    [InlineData(100, 200, 100)]
+    [InlineData(65500, 30, 66)]       // across the right seam, forwards
+    [InlineData(30, 65500, -66)]      // across the left seam, backwards
+    [InlineData(0, 32767, 32767)]
+    [InlineData(0, 32768, -32768)]    // exactly half a planet: 16-bit signed convention
+    public void EngineDeltaUnits_IsShortestSignedPathAcrossSeams(int from, int to, int expected) =>
+        Assert.Equal(expected, WorldMath.DeltaUnits(from, to));
 }

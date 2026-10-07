@@ -19,7 +19,7 @@ public sealed partial class GameSession
     private int PlayerWorldX => Player.WorldX(CameraX);
 
     /// <summary>Shortest signed pixel distance from <paramref name="fromX"/> to the player.</summary>
-    private int DxToPlayerPx(int fromX) => (short)(ushort)((PlayerWorldX - fromX) & Arcade.WorldMask) / Arcade.UnitsPerPixel;
+    private int DxToPlayerPx(int fromX) => WorldMath.DeltaUnits(fromX, PlayerWorldX) / Arcade.UnitsPerPixel;
 
     // ----- spawning --------------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ public sealed partial class GameSession
         for (int i = 0; i < 32; i++)
         {
             int x = Rng.Next(Arcade.WorldUnits);
-            int d = Math.Abs((short)(ushort)((x - CameraX) & Arcade.WorldMask));
+            int d = Math.Abs(WorldMath.DeltaUnits(CameraX, x));
             if (d > 300 * Arcade.UnitsPerPixel) return x;
         }
         return WrapX(CameraX + Arcade.WorldUnits / 2);
@@ -270,7 +270,7 @@ public sealed partial class GameSession
                     e.Nap = 6;
                     return;
                 }
-                int dx = (short)(ushort)((h.X - e.X) & Arcade.WorldMask);
+                int dx = WorldMath.DeltaUnits(e.X, h.X);
                 if (Math.Abs(dx) > 2 * Arcade.UnitsPerPixel) e.X = WrapX(e.X + Math.Sign(dx) * Arcade.UnitsPerPixel);
                 int goalY = h.PixelY - 12;
                 e.Vy = e.PixelY < goalY ? Params[WaveVar.LanderYV] : 0;
@@ -335,7 +335,7 @@ public sealed partial class GameSession
     /// <summary>SCZ0 (defb6.src:846-901).</summary>
     private void MutantThink(Enemy e)
     {
-        int dxUnits = (short)(ushort)((PlayerWorldX - e.X) & Arcade.WorldMask);
+        int dxUnits = WorldMath.DeltaUnits(e.X, PlayerWorldX);
         e.Vx = (dxUnits >= 0 ? 1 : -1) * Params[WaveVar.MutantXV];
         int dy = Player.PixelY - e.PixelY;
         int syv = Params[WaveVar.MutantYV];

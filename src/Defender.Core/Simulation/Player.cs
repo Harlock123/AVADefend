@@ -61,7 +61,7 @@ public sealed partial class GameSession
             if (p.InHyperspace) { /* just entered */ }
             else StepPlayerPhysics(input);
         }
-        int scroll = (short)(ushort)((CameraX - cameraBefore) & Arcade.WorldMask);
+        int scroll = WorldMath.DeltaUnits(cameraBefore, CameraX);
         UpdateStars(p.InHyperspace ? 0 : scroll);
         UpdateLasers();
         if (!frozen)

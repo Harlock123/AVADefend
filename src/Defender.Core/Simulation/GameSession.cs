@@ -422,7 +422,7 @@ public sealed partial class GameSession
         return d / Arcade.UnitsPerPixel;
     }
 
-    private static int WrapX(int x) => x & Arcade.WorldMask;
+    private static int WrapX(int x) => WorldMath.WrapUnits(x);
 
     private static int WrapY(int y)
     {
