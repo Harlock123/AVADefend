@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Defender.Avalonia/Defender.Avalonia.csproj" />
+    <Project Path="src/Defender.Core/Defender.Core.csproj" />
+    <Project Path="src/Defender.Infrastructure/Defender.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Defender.Tests/Defender.Tests.csproj" />
+  </Folder>
+</Solution>
