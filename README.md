@@ -39,11 +39,20 @@ The screenshots are rendered by the game itself (`--screenshots screenshots/`, d
 
 Every push to `main` refreshes the **[latest pre-release](https://github.com/Harlock123/AVADefend/releases/tag/latest)**; version tags (`v0.1.0`, …) make proper [releases](https://github.com/Harlock123/AVADefend/releases). Each is a single self-contained program, no .NET install needed:
 
-| Platform | File |
+Pick the file that matches your computer's processor, not just its operating system:
+
+| Your computer | File |
 |---|---|
-| Windows (x64, x86, Arm64) | `AVADefend-win-x64.zip` (and `-win-x86`, `-win-arm64`) |
-| macOS (Apple Silicon, Intel) | `AVADefend-osx-arm64.tar.gz`, `AVADefend-osx-x64.tar.gz` |
-| Linux (x64, Arm64, Arm) | `AVADefend-linux-x64.tar.gz` (and `-linux-arm64`, `-linux-arm`) |
+| Windows PC (Intel/AMD, most PCs) | `AVADefend-win-x64.zip` |
+| Windows on Arm (e.g. Snapdragon laptops) | `AVADefend-win-arm64.zip` |
+| 32-bit Windows | `AVADefend-win-x86.zip` |
+| Mac with Apple Silicon (M1 and later) | `AVADefend-osx-arm64.tar.gz` |
+| Intel Mac | `AVADefend-osx-x64.tar.gz` |
+| Linux PC (Intel/AMD); `uname -m` says `x86_64` | `AVADefend-linux-x64.tar.gz` |
+| Linux on 64-bit Arm (Arm laptops, Raspberry Pi 4/5 with a 64-bit OS); `uname -m` says `aarch64` | `AVADefend-linux-arm64.tar.gz` |
+| Linux on 32-bit Arm (older Raspberry Pi OS); `uname -m` says `armv7l` | `AVADefend-linux-arm.tar.gz` |
+
+A build for the wrong processor will not start even though it is marked executable (on Linux you may see `Exec format error`, or a `qemu-x86_64` error if your system has x86 emulation installed).
 
 Unzip or untar and run `AVADefend` (`AVADefend.exe` on Windows). The builds are not code-signed: on macOS run `xattr -d com.apple.quarantine AVADefend` once (or right-click → Open); on Windows choose *More info → Run anyway* if SmartScreen asks. `AVADefend --selftest` prints a quick check of graphics, sound and gamepad support without opening a window.
 
