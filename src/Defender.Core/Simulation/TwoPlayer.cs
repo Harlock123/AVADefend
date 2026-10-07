@@ -33,6 +33,21 @@ public sealed partial class GameSession
     /// <summary>The waiting player's saved state (2-player games only).</summary>
     public PlayerState? WaitingPlayer => PlayerCount == 2 ? _slots[1 - CurrentPlayer] : null;
     public int InitialsPlayer { get; private set; }
+    /// <summary>The score being entered on the initials screen (2-player games: not necessarily the last flyer's).</summary>
+    public int InitialsScore => _initialsQueue.Count > 0 ? _initialsQueue.Peek().Score : Score;
+
+    /// <summary>Closing the app during initials entry commits what has been entered (and any later qualifiers as "---").</summary>
+    public void CommitPendingInitials()
+    {
+        // Letters already confirmed are kept; unconfirmed positions and any later players become '-'.
+        int keep = InitialsCursor;
+        for (int guard = 0; State == SessionState.EnterInitials && guard < 4; guard++)
+        {
+            for (int i = keep; i < 3; i++) Initials[i] = '-';
+            CommitInitials();
+            keep = 0;
+        }
+    }
 
     private PlayerState CapturePlayer() => new()
     {

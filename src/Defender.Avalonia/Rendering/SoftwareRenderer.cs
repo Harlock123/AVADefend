@@ -285,7 +285,7 @@ public sealed class SoftwareRenderer
         CenterText(s.InitialsPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 60, _pal[Pal.Yellow]);
         CenterText("YOU HAVE QUALIFIED FOR", 80, w);
         CenterText("THE HALL OF FAME", 92, w);
-        CenterText("SCORE " + s.Score, 110, _pal[Pal.Laser]);
+        CenterText("SCORE " + s.InitialsScore, 110, _pal[Pal.Laser]);
         CenterText("UP/DOWN TO CHOOSE, FIRE TO ENTER", 130, _pal[Pal.Grey]);
         CenterText("(OR TYPE THEM)", 140, _pal[Pal.Grey]);
         int x0 = CropX + (Width - 3 * 18) / 2;

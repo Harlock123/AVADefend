@@ -43,7 +43,8 @@ public sealed class SuspendData
 public sealed partial class GameSession
 {
     /// <summary>Suspend is only meaningful mid-game.</summary>
-    public bool CanSuspend => State is SessionState.Playing or SessionState.LifeStart or SessionState.WaveComplete;
+    public bool CanSuspend => State is SessionState.Playing or SessionState.LifeStart or SessionState.WaveComplete
+        or SessionState.Dying or SessionState.TurnOver;
 
     public SuspendData CaptureSuspend()
     {
@@ -78,7 +79,7 @@ public sealed partial class GameSession
             || d.Wave < 1 || d.Lives < 0 || d.SmartBombs < 0 || d.Score < 0
             || d.PlayerCount is < 1 or > 2 || d.CurrentPlayer < 0 || d.CurrentPlayer >= d.PlayerCount
             || (d.WaitingPlayer is { } w && (w.Humanoids.Count != Arcade.HumanoidCount || w.Params.Length != d.Params.Length || w.Reserves.Length != 5))
-            || d.State is not (SessionState.Playing or SessionState.LifeStart or SessionState.WaveComplete))
+            || d.State is not (SessionState.Playing or SessionState.LifeStart or SessionState.WaveComplete or SessionState.Dying or SessionState.TurnOver))
             throw new InvalidDataException("Suspend data is inconsistent");
         var s = new GameSession(rules, policy, new XorShiftRandom(1), terrain: new Terrain(d.TerrainSeed), highScores: highScores);
         s.Rng.State = d.RngState;

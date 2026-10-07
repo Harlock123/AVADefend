@@ -18,7 +18,7 @@ public sealed class FrameSnapshot
     public bool Demo;
     public GameMode Mode;
     public int Score, Lives, SmartBombs, Wave, HighScore;
-    public int PlayerCount = 1, CurrentPlayer, InitialsPlayer;
+    public int PlayerCount = 1, CurrentPlayer, InitialsPlayer, InitialsScore;
     public readonly int[] PlayerScores = new int[2], PlayerLives = new int[2], PlayerBombs = new int[2];
     public bool PlanetActive;
     public bool PlayerVisible;
@@ -88,7 +88,7 @@ public sealed partial class GameSession
         s.State = State; s.StateTimer = StateTimer; s.Paused = Paused; s.Mode = Policy.Mode;
         s.Score = Score; s.Lives = Lives; s.SmartBombs = SmartBombs; s.Wave = Wave;
         s.HighScore = HighScores.Best;
-        s.PlayerCount = PlayerCount; s.CurrentPlayer = CurrentPlayer; s.InitialsPlayer = InitialsPlayer;
+        s.PlayerCount = PlayerCount; s.CurrentPlayer = CurrentPlayer; s.InitialsPlayer = InitialsPlayer; s.InitialsScore = InitialsScore;
         for (int p = 0; p < 2; p++) { s.PlayerScores[p] = ScoreOf(p); s.PlayerLives[p] = LivesOf(p); s.PlayerBombs[p] = BombsOf(p); }
         s.PlanetActive = PlanetActive;
         s.HumanoidsAlive = HumanoidsAlive;

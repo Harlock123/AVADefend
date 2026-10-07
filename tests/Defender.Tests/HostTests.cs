@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using Defender.Avalonia;
@@ -109,6 +111,77 @@ public class HostTests : IDisposable
         Assert.Equal(SessionState.Attract, b.Session.State);
         Assert.Contains(b.Messages, m => m.Contains("Suspend file ignored"));
         Assert.False(File.Exists(path));
+    }
+
+    private static void ReachInitials(GameSession s)
+    {
+        s.TestAddScore(5000);
+        while (s.State != SessionState.EnterInitials)
+        {
+            if (s.State == SessionState.Playing)
+            {
+                var e = s.TestSpawn(EnemyKind.Mutant, s.Player.WorldX(s.CameraX), s.Player.PixelY);
+                e.Vx = e.Vy = 0; e.Nap = 1000;
+            }
+            s.Step(default);
+        }
+    }
+
+    [AvaloniaFact]
+    public void HeldLetterKey_TypesOneInitial_NotThreeViaKeyRepeat()
+    {
+        var h = NewHost();
+        var w = new MainWindow(h);
+        w.Show();
+        h.Session.StartGame();
+        ReachInitials(h.Session);
+        w.KeyPress(Key.Q, RawInputModifiers.None, PhysicalKey.Q, "q");
+        for (int i = 0; i < 5; i++) w.KeyPress(Key.Q, RawInputModifiers.None, PhysicalKey.Q, "q"); // OS repeats
+        Assert.Equal(SessionState.EnterInitials, h.Session.State);
+        Assert.Equal(1, h.Session.InitialsCursor);
+        w.KeyRelease(Key.Q, RawInputModifiers.None, PhysicalKey.Q, "q");
+        w.Close();
+    }
+
+    [Fact]
+    public void ClosingDuringInitials_CommitsTheEntry()
+    {
+        var h = NewHost();
+        h.Session.StartGame();
+        ReachInitials(h.Session);
+        h.Session.TypeInitial('Z');
+        h.Session.CommitPendingInitials();
+        Assert.Equal(SessionState.Attract, h.Session.State);
+        Assert.Equal("Z--", h.Session.HighScores.AllTime.Entries[0].Initials);
+    }
+
+    [Fact]
+    public void ModernSuspend_WorksDuringDeathSequence()
+    {
+        var a = NewHost(x => { x.Settings.Mode = GameMode.Modern; x.ApplySettings(); x.SaveSettings(); });
+        a.Session.StartGame();
+        a.Session.RunUntil(() => a.Session.State == SessionState.Playing, 400);
+        var e = a.Session.TestSpawn(EnemyKind.Mutant, a.Session.Player.WorldX(a.Session.CameraX), a.Session.Player.PixelY);
+        e.Vx = e.Vy = 0; e.Nap = 1000;
+        a.Session.Step(default);
+        Assert.Equal(SessionState.Dying, a.Session.State);
+        Assert.True(a.SuspendIfPlaying());
+        var b = NewHost();
+        Assert.Equal(SessionState.Dying, b.Session.State);
+        b.Session.RunUntil(() => b.Session.State == SessionState.LifeStart, 400);
+    }
+
+    [Fact]
+    public void PlanetExplosionEffect_DoesNotLeakIntoTheNextLife()
+    {
+        var s = TestUtil.NewPlaying();
+        foreach (var hm in s.Humanoids) s.TestKillHumanoid(hm);
+        Assert.True(s.PlanetExploding);
+        var e = s.TestSpawn(EnemyKind.Mutant, s.Player.WorldX(s.CameraX), s.Player.PixelY);
+        e.Vx = e.Vy = 0; e.Nap = 1000;
+        s.Step(default);
+        s.RunUntil(() => s.State == SessionState.LifeStart, 400);
+        Assert.False(s.PlanetExploding);
     }
 
     [AvaloniaFact]

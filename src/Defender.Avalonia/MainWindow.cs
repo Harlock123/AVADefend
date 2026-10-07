@@ -15,6 +15,7 @@ public sealed class MainWindow : Window
     private readonly SettingsPanel _settings;
     private readonly TextBlock _hintBar;
     private WindowState _restoreState = WindowState.Normal;
+    private readonly HashSet<Key> _keysDown = new();
 
     public MainWindow() : this(new GameHost()) { }
 
@@ -48,6 +49,7 @@ public sealed class MainWindow : Window
         Deactivated += (_, _) =>
         {
             _host.ReleaseAllKeys();
+            _keysDown.Clear();
             // Modern: auto-pause when the window loses focus. Classic keeps running like a cabinet.
             if (_host.Settings.Mode != GameMode.Modern) return;
             if (_host.Session.State is SessionState.Playing or SessionState.LifeStart) _host.Session.SetPaused(true);
@@ -55,7 +57,7 @@ public sealed class MainWindow : Window
         };
         Activated += (_, _) => _host.FocusHold = false;
         Opened += (_, _) => _view.Focus();
-        Closing += (_, _) => { _host.SuspendIfPlaying(); _host.SaveSettings(); _host.Dispose(); };
+        Closing += (_, _) => { _host.Session.CommitPendingInitials(); _host.SuspendIfPlaying(); _host.SaveSettings(); _host.Dispose(); };
     }
 
     public GameView View => _view;
@@ -64,6 +66,7 @@ public sealed class MainWindow : Window
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        bool repeat = !_keysDown.Add(e.Key);   // OS key-repeat (or a key still held from play)
         if (_settings.IsVisible)
         {
             if (e.Key == Key.Escape && _settings.TryCancelPadCapture()) { e.Handled = true; return; }
@@ -81,7 +84,7 @@ public sealed class MainWindow : Window
         // Initials can be typed directly; letters must not also act as game buttons there.
         if (_host.Session.State == SessionState.EnterInitials && e.Key is >= Key.A and <= Key.Z)
         {
-            _host.Session.TypeInitial((char)('A' + (e.Key - Key.A)));
+            if (!repeat) _host.Session.TypeInitial((char)('A' + (e.Key - Key.A)));
             e.Handled = true;
             return;
         }
@@ -91,6 +94,7 @@ public sealed class MainWindow : Window
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
+        _keysDown.Remove(e.Key);
         _host.KeyUp(KeyName(e.Key));
         e.Handled = true;
     }

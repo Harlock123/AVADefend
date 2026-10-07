@@ -192,6 +192,7 @@ public sealed partial class GameSession
         // PLRES re-creates the surviving humanoids each life: spread over the quadrants, random facing.
         PlaceHumanoids(Humanoids.Count(h => h.Alive));
         _intraCounter = 0;
+        _planetBlowTimer = 0;   // the explosion effect belongs to the life in which it happened
         State = SessionState.LifeStart;
         StateTimer = 0;
         Enemies.Clear(); Shells.Clear(); Lasers.Clear(); Particles.Clear(); Popups.Clear();
