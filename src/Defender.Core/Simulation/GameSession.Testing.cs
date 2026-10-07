@@ -19,6 +19,9 @@ public sealed partial class GameSession
     /// <summary>Prevents the wave ending and baiters spawning in a staged empty sky (tests only).</summary>
     internal bool TestHoldWave { get; set; }
 
+    /// <summary>Skips player collisions (performance measurements only).</summary>
+    internal bool TestInvulnerable { get; set; }
+
     internal Enemy TestSpawn(EnemyKind kind, int worldX, int yPx)
     {
         Enemy e;

@@ -62,7 +62,7 @@ public sealed partial class GameSession
         UpdateEnemies();
         UpdateHumanoids();
         UpdateShells();
-        if (State == SessionState.Playing && p.Alive && !p.InHyperspace) PlayerCollisions();
+        if (State == SessionState.Playing && p.Alive && !p.InHyperspace && !TestInvulnerable) PlayerCollisions();
         if (State == SessionState.Playing && ++_gexecCounter >= Arcade.GexecFrames)
         {
             _gexecCounter = 0;
