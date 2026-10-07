@@ -40,7 +40,7 @@ public sealed class MainWindow : Window
                 _host.Session.Step(new Core.Input.PlayerInput { PausePressed = true });
         };
         Opened += (_, _) => _view.Focus();
-        Closing += (_, _) => { _host.SaveSettings(); _host.Dispose(); };
+        Closing += (_, _) => { _host.SuspendIfPlaying(); _host.SaveSettings(); _host.Dispose(); };
     }
 
     public GameView View => _view;

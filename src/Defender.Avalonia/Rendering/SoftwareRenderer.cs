@@ -48,7 +48,7 @@ public sealed class SoftwareRenderer
         DrawHud(s, false);
         if (s.State == SessionState.LifeStart) CenterText("PLAYER ONE", 120, _pal[Pal.White]);
         if (s.State == SessionState.WaveComplete) DrawWaveComplete(s);
-        if (s.Paused) { CenterText("PAUSED", 116, _pal[Pal.White]); CenterText("ESC / START TO RESUME", 128, _pal[Pal.Grey]); }
+        if (s.Paused) { CenterText("PAUSED", 116, _pal[Pal.White]); CenterText("ESC / START TO RESUME", 128, _pal[Pal.Grey]); if (StatusLine is { } st) CenterText(st, 140, _pal[Pal.Yellow]); }
     }
 
     // ----- primitives in game coordinates (304×256) -------------------------------------------------

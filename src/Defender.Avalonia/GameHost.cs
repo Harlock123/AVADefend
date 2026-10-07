@@ -33,6 +33,7 @@ public sealed class GameHost : IDisposable
         Scheduler = new FixedStepScheduler(Arcade.TicksPerSecond);
         Session = CreateSession();
         ApplySettings();
+        if (Settings.Mode == GameMode.Modern) TryResume();
     }
 
     public GameSettings Settings { get; }
@@ -66,6 +67,39 @@ public sealed class GameHost : IDisposable
     {
         try { _hsStore.Save(new HighScoreFile { Entries = Session.HighScores.Entries.ToList() }); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Messages.Add("Could not save high scores: " + ex.Message); }
+    }
+
+    /// <summary>Modern only: write the suspend slot if a game is in progress. Classic never suspends.</summary>
+    public bool SuspendIfPlaying()
+    {
+        if (Settings.Mode != GameMode.Modern || !Session.CanSuspend) return false;
+        try
+        {
+            _storage.Suspend(1).Save(new SuspendFile { SavedUtc = DateTime.UtcNow, Data = Session.CaptureSuspend() });
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Messages.Add("Could not suspend: " + ex.Message); return false; }
+    }
+
+    /// <summary>Resume consumes the slot, so it works as suspend/resume, not as a repeatable save state.</summary>
+    private void TryResume()
+    {
+        var store = _storage.Suspend(1);
+        var r = store.Load();
+        if (r.Status == LoadStatus.Missing) return;
+        if (r.Message is { } m) Messages.Add(m);
+        try
+        {
+            if (r.Value.Data is { } d)
+            {
+                var resumed = GameSession.Restore(d, PolicyFor(Settings), Session.HighScores);
+                resumed.HighScoreCommitted += _ => SaveHighScores();
+                Session = resumed;
+                Messages.Add("RESUMED SUSPENDED GAME");
+            }
+        }
+        catch (InvalidDataException ex) { Messages.Add("Suspend file ignored: " + ex.Message); }
+        finally { try { store.Delete(); } catch (IOException) { } }
     }
 
     public void SaveSettings()

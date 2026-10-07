@@ -48,6 +48,8 @@ public sealed partial class GameSession
     public long Frame { get; private set; }
     public bool Paused { get; private set; }
 
+    public void SetPaused(bool paused) { if (Policy.AllowPause && State is SessionState.Playing or SessionState.LifeStart) Paused = paused; }
+
     public int Score { get; private set; }
     public int NextReplay { get; private set; }
     public int Lives { get; private set; }   // reserve ships (current ship not counted)

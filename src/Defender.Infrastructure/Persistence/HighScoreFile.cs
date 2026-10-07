@@ -20,5 +20,8 @@ public sealed class Storage(string directory)
     public JsonStore<HighScoreFile> HighScores(string slot) =>
         new(Path.Combine(Directory, $"highscores-{Sanitize(slot)}.json"), HighScoreFile.CurrentSchema, () => new HighScoreFile());
 
+    public JsonStore<SuspendFile> Suspend(int slot) =>
+        new(Path.Combine(Directory, $"suspend-{Math.Clamp(slot, 1, 3)}.json"), SuspendFile.CurrentSchema, () => new SuspendFile());
+
     private static string Sanitize(string s) => new(s.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
 }
