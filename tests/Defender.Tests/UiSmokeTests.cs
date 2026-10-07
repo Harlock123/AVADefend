@@ -119,7 +119,9 @@ public class SettingsUiTests : IDisposable
         Assert.True(panel.IsVisible);
         var frame = w.CaptureRenderedFrame();
         var shot = Environment.GetEnvironmentVariable("DEFENDER_SETTINGS_SHOT");
+#pragma warning disable CS0618 // test-only diagnostic screenshot
         if (frame is not null && shot is not null) frame.Save(shot);
+#pragma warning restore CS0618
         w.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
         Assert.False(panel.IsVisible);
         Assert.True(File.Exists(Path.Combine(_dir, "settings.json")));
