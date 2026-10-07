@@ -14,6 +14,8 @@ public sealed class FrameSnapshot
     public SessionState State;
     public int StateTimer;
     public bool Paused;
+    public AttractPhase AttractPhase;
+    public bool Demo;
     public GameMode Mode;
     public int Score, Lives, SmartBombs, Wave, HighScore;
     public bool PlanetActive;

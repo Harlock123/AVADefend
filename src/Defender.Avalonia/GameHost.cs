@@ -32,6 +32,7 @@ public sealed class GameHost : IDisposable
         Gamepad = enableGamepad ? new SdlGamepad() : null;
         Scheduler = new FixedStepScheduler(Arcade.TicksPerSecond);
         Session = CreateSession();
+        Attract = new AttractDirector(() => Session.Policy, new XorShiftRandom((uint)Environment.TickCount | 1));
         ApplySettings();
         if (Settings.Mode == GameMode.Modern) TryResume();
     }
@@ -43,6 +44,8 @@ public sealed class GameHost : IDisposable
     public GameSession Session { get; private set; }
     public FrameSnapshot Snapshot { get; } = new();
     public List<string> Messages { get; } = new();
+
+    public AttractDirector Attract { get; private set; } = null!;
 
     /// <summary>Diagnostic/demo: when set, input comes from the scripted pilot instead of devices.</summary>
     public Autopilot? Autopilot { get; set; }
@@ -154,9 +157,15 @@ public sealed class GameHost : IDisposable
             if (Autopilot is not null) input = Autopilot.Next(Session) with { PausePressed = input.PausePressed };
             Session.Step(input);
             foreach (var snd in Session.Sounds) Audio.Play(snd);
+            if (Session.State == SessionState.Attract && Autopilot is null) Attract.Step();
+            else if (Attract.Phase != AttractPhase.Title || Attract.PhaseTimer != 0) Attract.Reset();
         }
         Audio.SetLooping(SoundId.Thrust, Session.ThrustSoundOn && !Session.Paused);
-        Session.BuildSnapshot(Snapshot);
+        bool demo = Session.State == SessionState.Attract && Attract.Phase == AttractPhase.Demo && Attract.Demo is not null;
+        (demo ? Attract.Demo! : Session).BuildSnapshot(Snapshot);
+        Snapshot.Demo = demo;
+        Snapshot.AttractPhase = Attract.Phase;
+        Snapshot.HighScore = Session.HighScores.Best;
     }
 
     public void Dispose()

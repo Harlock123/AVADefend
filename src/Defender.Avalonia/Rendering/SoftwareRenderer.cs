@@ -38,6 +38,11 @@ public sealed class SoftwareRenderer
         switch (s.State)
         {
             case SessionState.Attract: DrawAttract(s); DrawHud(s, attract: true); return;
+            case var _ when s.Demo:
+                DrawPlayfield(s); DrawHud(s, false);
+                CenterText("DEMONSTRATION", 60, _pal[Pal.White]);
+                if ((s.StateTimer / 30) % 2 == 0) CenterText("PRESS 1 OR F2 TO START", 214, _pal[Pal.Yellow]);
+                return;
             case SessionState.GameOver:
                 DrawPlayfield(s); DrawHud(s, false);
                 CenterText("GAME OVER", 130, _pal[Pal.White]);
@@ -202,7 +207,7 @@ public sealed class SoftwareRenderer
         CenterText(Branding.Title, 52, _pal[Pal.Laser], 3);
         CenterText(Branding.Disclaimer, 78, g);
 
-        if ((t / 600) % 2 == 0)
+        if (s.AttractPhase == AttractPhase.Title)
         {
             // Scoring legend.
             CenterText("SCORING", 96, w);
