@@ -33,8 +33,8 @@ public sealed partial class GameSession
                 e.ShotTimer = 10000;
                 break;
             case EnemyKind.Swarmer:
-                SpawnSwarmer(worldX, yPx, appear: false);
-                e = Enemies[^1];
+                e = NewEnemy(kind, worldX, yPx, appear: false);   // bypasses the 20-swarmer cap
+                e.Dir = 1;
                 break;
             default:
                 e = NewEnemy(kind, worldX, yPx, appear: false);

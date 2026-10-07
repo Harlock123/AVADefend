@@ -43,11 +43,11 @@ public class EnemyTests
     }
 
     [Fact]
-    public void Bomber_LaysStationaryMines_UpToCap()
+    public void Bomber_LaysStationaryMines_OnlyOnScreen_UpToCap()
     {
         var s = TestUtil.NewPlaying();
-        var b = s.TestSpawn(EnemyKind.Bomber, 0x8000, 90);
-        b.Vx = 0x20;
+        var b = s.TestSpawn(EnemyKind.Bomber, s.WorldAtScreen(150), 90);
+        b.Vx = 0; b.Dir = 0;   // stays on screen; slot 0 of its squad
         int maxMines = 0;
         for (int i = 0; i < 400; i++)
         {

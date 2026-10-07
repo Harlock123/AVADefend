@@ -66,49 +66,70 @@ public sealed partial class GameSession
         return WrapX(CameraX + Arcade.WorldUnits / 2);
     }
 
-    /// <summary>Pods, bombers and any reserved mutants/swarmers enter when a life (or wave) starts.</summary>
+    /// <summary>Pods, bombers and any reserved mutants/swarmers enter when a life (or wave) starts (PLRES).</summary>
     private void SpawnLifeStartEnemies()
     {
         for (; PodReserve > 0; PodReserve--)
         {
-            // X high byte $10-$4F, random drift (defb6.src:87-114).
-            var e = NewEnemy(EnemyKind.Pod, (Rng.Range(0x10, 0x4F) << 8) | Rng.NextByte(), Rng.Range(Arcade.YMin + 10, Arcade.YMax - 30));
-            e.Vx = Rng.Range(-32, 31);
-            e.Vy = Rng.Range(0x20, 0x7F) * Rng.Sign();
+            // PRBST (defb6.src:87-114): X high byte $10-$4F, Y = rnd/2 + YMIN, vx -32..31, |vy| 32..64.
+            int h = Rng.NextByte(), l = Rng.NextByte(), sd = Rng.NextByte();
+            var e = NewEnemy(EnemyKind.Pod, (((h & 0x3F) + 0x10) << 8) | l, (l >> 1) + Arcade.YMin);
+            e.Vx = (sd & 0x3F) - 0x20;
+            int vy = (Rng.NextByte() & 0x7F) - 0x40;
+            e.Vy = vy >= 0 ? vy | 0x20 : vy & ~0x20;
         }
         while (BomberReserve > 0)
         {
             int n = Math.Min(3, BomberReserve);
-            int squad = ++_bomberSquadCounter;
-            int dir = squad % 2 == 0 ? 1 : -1;
-            int baseX = PlayerWorldX + 0x8000 + Rng.Next(0x1000);
-            for (int i = 0; i < n; i++)
-            {
-                var b = NewEnemy(EnemyKind.Bomber, baseX + i * 0x0300, 80 + i * 6);
-                b.Squad = squad;
-                b.Vx = dir * Params[WaveVar.BomberXV];
-                b.CruiseY = Rng.Range(64, 104);
-            }
+            SpawnBomberSquad(n);
             BomberReserve -= n;
         }
+        // RSW0 (defa7.src:1590-1617): swarmers return in clusters of up to 6, 1024-1535 px ahead of the screen.
+        while (SwarmerReserve > 0)
+        {
+            int y = (Rng.NextByte() >> 1) + Arcade.YMin;
+            int x = CameraX + ((((Rng.NextByte() & 0x3F) + 0x80) << 8) | Rng.NextByte());
+            int n = Math.Min(6, SwarmerReserve);
+            for (int i = 0; i < n; i++) SpawnSwarmer(x, y);
+            SwarmerReserve -= n;
+        }
         for (; MutantReserve > 0; MutantReserve--) SpawnMutant(RandomXAwayFromPlayer(), Rng.Range(Arcade.YMin + 10, 150));
-        for (; SwarmerReserve > 0; SwarmerReserve--) SpawnSwarmer(RandomXAwayFromPlayer(), Rng.Range(Arcade.YMin + 10, 150), appear: true);
     }
 
-    private void SpawnSwarmer(int x, int yPx, bool appear)
+    /// <summary>TIEST (defb6.src:977-1021): members $180 units apart at player X + $8000, Y = cruise = $50; direction alternates.</summary>
+    private void SpawnBomberSquad(int n)
     {
-        var e = NewEnemy(EnemyKind.Swarmer, x, yPx, appear);
-        e.Dir = DxToPlayerPx(e.X) >= 0 ? 1 : -1;
+        int squad = ++_bomberSquadCounter;
+        _bomberFlip = !_bomberFlip;
+        int vx = (_bomberFlip ? 1 : -1) * Params[WaveVar.BomberXV];
+        for (int i = n; i >= 1; i--)
+        {
+            var b = NewEnemy(EnemyKind.Bomber, PlayerWorldX + 0x8000 + i * 0x180, 0x50, appear: false);
+            b.Squad = squad;
+            b.Dir = n - i;          // slot index within the squad (PD..PD6)
+            b.Vx = vx;
+            b.CruiseY = 0x50;
+        }
+    }
+
+    /// <summary>MMSW/RANDV (defb6.src:128-172): at the given point, vy = signed rnd × 2, vx -32..31, random first nap.</summary>
+    private void SpawnSwarmer(int x, int yPx)
+    {
+        if (Enemies.Count(e => !e.Dead && e.Kind == EnemyKind.Swarmer) >= Arcade.MaxSwarmers) return;
+        var e = NewEnemy(EnemyKind.Swarmer, x, yPx, appear: false);
+        e.Vy = (sbyte)Rng.NextByte() * 2;
+        e.Vx = (Rng.NextByte() & 0x3F) - 0x20;
         e.Accel = Rng.NextByte() & Params[WaveVar.SwarmerYAccelMask];
+        e.Nap = (Rng.NextByte() & 0x1F) + 1;
         e.ShotTimer = Rng.RMax(Params[WaveVar.SwarmerShotTimer]);
-        e.Vy = Rng.Range(-0x80, 0x80);
+        e.Dir = DxToPlayerPx(e.X) >= 0 ? 1 : -1;
     }
 
     private void SpawnBaiter()
     {
-        // World X = BGL + random(0..31)*256 → on the visible screen; random Y (defb6.src:5-24).
+        // World X = BGL + random(0..31)*256 → on the visible screen; random Y (defb6.src:5-24). First shot timer 8.
         var e = NewEnemy(EnemyKind.Baiter, CameraX + Rng.Next(32) * 256, Rng.Range(Arcade.YMin + 10, Arcade.YMax - 20));
-        e.ShotTimer = Rng.RMax(Params[WaveVar.BaiterShotTimer]);
+        e.ShotTimer = 8;
         e.Anim = 0;
         e.Nap = 1;
         _sounds.Add(SoundId.BaiterAppear);
@@ -124,17 +145,22 @@ public sealed partial class GameSession
     {
         int landersAlive = Enemies.Count(e => !e.Dead && e.Kind == EnemyKind.Lander);
         if (_waveTimer > 0) _waveTimer--;
-        if ((_firstGexec || _waveTimer == 0 || landersAlive == 0) && LanderReserve > 0 && landersAlive < Arcade.MaxLandersAlive)
+        // GEX2 (defa7.src:1692-1709) runs on the first tick, when the squad timer expires, or when no landers
+        // are alive; it reloads the timer every time it runs, whether or not a squad could launch.
+        if (_firstGexec || _waveTimer == 0 || landersAlive == 0)
         {
-            int n = Math.Min(Params[WaveVar.WaveSize], LanderReserve);
-            for (int i = 0; i < n; i++) SpawnLander();
-            LanderReserve -= n;
+            if (LanderReserve > 0 && landersAlive < Arcade.MaxLandersAlive)
+            {
+                int n = Math.Min(Params[WaveVar.WaveSize], LanderReserve);
+                for (int i = 0; i < n; i++) SpawnLander();
+                LanderReserve -= n;
+            }
             _waveTimer = Params[WaveVar.WaveTime];
         }
         _firstGexec = false;
 
         int remaining = EnemiesRemainingForWave;
-        if (remaining == 0 && Player.Alive && !Player.InHyperspace && !TestHoldWave)
+        if (remaining == 0 && Player.Alive && !TestHoldWave)   // may end during hyperspace too
         {
             BeginWaveComplete();
             return;
@@ -150,7 +176,7 @@ public sealed partial class GameSession
             _baiterTimer = remaining >= 4 ? ufo : Rng.Next(ufo / 4 + 1) + 1;
         }
 
-        // Intra-wave escalation every 40 executive ticks (10 s).
+        // Intra-wave escalation every 40 executive ticks (10 s); the count restarts with each life.
         if (++_intraCounter >= Arcade.IntraWaveGexecTicks)
         {
             _intraCounter = 0;
@@ -162,11 +188,12 @@ public sealed partial class GameSession
 
     private void UpdateEnemies()
     {
-        // Bomber squads: one random member per squad gets attention each frame (defb6.src:1027-1116).
-        foreach (var squad in Enemies.Where(e => !e.Dead && e.Kind == EnemyKind.Bomber && e.Appear == 0).GroupBy(e => e.Squad).ToList())
+        // Bomber squads: each frame one of the squad's 4 slots is picked; an empty slot means no update (TIE).
+        foreach (var squad in Enemies.Where(e => !e.Dead && e.Kind == EnemyKind.Bomber).GroupBy(e => e.Squad).ToList())
         {
-            var members = squad.ToList();
-            BomberThink(members[Rng.Next(members.Count)]);
+            int slot = (Rng.NextByte() & 6) >> 1;
+            var member = squad.FirstOrDefault(m => m.Dir == slot);
+            if (member is not null) BomberThink(member);
         }
 
         for (int i = 0; i < Enemies.Count; i++)
@@ -231,12 +258,14 @@ public sealed partial class GameSession
             case LanderPhase.Descend:
             {
                 e.Nap = 1;
+                TryShoot(e, WaveVar.LanderShotTimer);   // LANDG calls LSHOT every frame (defb6.src:775)
                 var h = e.Target >= 0 ? Humanoids[e.Target] : null;
                 if (h is null || h.State != HumanoidState.Walking)
                 {
+                    // Retarget without restoring X velocity: the lander now hovers in place (LNDSAA → LANDSA).
                     e.Phase = LanderPhase.Cruise;
-                    e.Vx = Rng.RMax(Params[WaveVar.LanderXV]) * Rng.Sign();
                     e.Target = -1;
+                    e.Nap = 6;
                     return;
                 }
                 int dx = (short)(ushort)((h.X - e.X) & Arcade.WorldMask);
@@ -254,15 +283,21 @@ public sealed partial class GameSession
                 break;
             }
             case LanderPhase.Lift:
+                // LANDF: climbs without checking the humanoid; shoots every 4 frames (defb6.src:795-802).
                 e.Nap = 1;
-                if (!CarryingTarget(e)) { ResumeCruise(e); return; }
-                if (e.PixelY <= Arcade.YMin + 8) { e.Phase = LanderPhase.Absorb; e.Vy = 0; }
+                if (Frame % 4 == 0) TryShoot(e, WaveVar.LanderShotTimer);
+                if (e.PixelY <= Arcade.YMin + 8)
+                {
+                    if (!CarryingTarget(e)) { ReturnToReserve(e); return; }
+                    e.Phase = LanderPhase.Absorb;
+                    e.Vy = 0;
+                }
                 break;
             case LanderPhase.Absorb:
             {
                 e.Nap = 1;
-                var h = e.Target >= 0 ? Humanoids[e.Target] : null;
-                if (h is null || !CarryingTarget(e)) { ResumeCruise(e); return; }
+                if (!CarryingTarget(e)) { ReturnToReserve(e); return; }
+                var h = Humanoids[e.Target];
                 h.Y -= 1 << 8;   // pulled up into the lander 1 px/frame
                 if (h.PixelY <= e.PixelY + 2)
                 {
@@ -280,13 +315,11 @@ public sealed partial class GameSession
     private bool CarryingTarget(Enemy e) =>
         e.Target >= 0 && Humanoids[e.Target].State == HumanoidState.Grabbed && Humanoids[e.Target].Carrier == e.Id;
 
-    /// <summary>Lander lost its humanoid (e.g. the humanoid was shot): back to cruising.</summary>
-    private void ResumeCruise(Enemy e)
+    /// <summary>LNDFXA (defb6.src:805-812): a lander that reaches the top without its humanoid is removed unscored and re-queued.</summary>
+    private void ReturnToReserve(Enemy e)
     {
-        e.Phase = LanderPhase.Cruise;
-        e.Target = -1;
-        e.Vx = Rng.RMax(Params[WaveVar.LanderXV]) * Rng.Sign();
-        e.Nap = 6;
+        e.Dead = true;
+        LanderReserve++;
     }
 
     private void Mutate(Enemy e)
@@ -299,21 +332,27 @@ public sealed partial class GameSession
         e.ShotTimer = Rng.RMax(Params[WaveVar.MutantShotTimer]);
     }
 
+    /// <summary>SCZ0 (defb6.src:846-901).</summary>
     private void MutantThink(Enemy e)
     {
-        int dx = DxToPlayerPx(e.X);
-        e.Vx = Math.Sign(dx == 0 ? 1 : dx) * Params[WaveVar.MutantXV];
+        int dxUnits = (short)(ushort)((PlayerWorldX - e.X) & Arcade.WorldMask);
+        e.Vx = (dxUnits >= 0 ? 1 : -1) * Params[WaveVar.MutantXV];
         int dy = Player.PixelY - e.PixelY;
         int syv = Params[WaveVar.MutantYV];
-        int rel = -dx; // mutant relative to player, px
-        if (rel >= -12 && rel <= 44)
+        // Seek when (player − mutant) is within −380..+1412 units (about −12..+44 px).
+        if (dxUnits >= -380 && dxUnits <= 1412)
         {
-            e.Vy = Math.Sign(dy) * syv;              // close in X: seek the player's altitude
-            TryShoot(e, WaveVar.MutantShotTimer);
+            e.Vy = dy >= 0 ? syv : -syv;
+            if (!OnScreen(e.X)) return;              // off screen: no hop, no shot this tick
         }
-        else e.Vy = Math.Abs(dy) < 8 ? -Math.Sign(dy == 0 ? 1 : dy) * syv : 0; // far: dodge the laser line
+        else if (dy > 0) e.Vy = dy <= 8 ? -syv : 0;  // avoid the player's line
+        else e.Vy = dy > -8 ? syv : 0;
+        // Hop exactly ±SZRY every tick, then the shot timer (SHOOT itself refuses off-screen shots).
         int hop = Params[WaveVar.MutantRandomY];
-        if (hop > 0) e.Y = WrapY(e.Y + (Rng.Range(-hop, hop) << 8));
+        int ny = e.PixelY + ((Rng.NextByte() & 0x80) != 0 ? hop : -hop);
+        if (ny < Arcade.YMin) ny = Arcade.YMax;
+        e.Y = (ny << 8) | (e.Y & 0xFF);
+        TryShoot(e, WaveVar.MutantShotTimer);
     }
 
     private void SwarmerThink(Enemy e)
@@ -334,45 +373,45 @@ public sealed partial class GameSession
         }
     }
 
+    /// <summary>UFO (defb6.src:1-83): re-seeks on each 18-frame cycle when rnd > UFOSK; a close axis keeps its velocity.</summary>
     private void BaiterThink(Enemy e)
     {
         e.Anim = (e.Anim + 1) % 3;
-        if (e.Anim == 0 || e.Dir == 0)
+        if ((e.Anim == 0 || e.Dir == 0) && (e.Dir == 0 || Rng.NextByte() > Params[WaveVar.BaiterSeek]))
         {
-            if (e.Dir == 0 || Rng.NextByte() > Params[WaveVar.BaiterSeek])
-            {
-                e.Dir = 1;
-                int dx = DxToPlayerPx(e.X);
-                e.Vx = Player.V16 + (Math.Abs(dx) > 20 ? Math.Sign(dx) * 0x40 : 0);
-                int dy = Player.PixelY - e.PixelY;
-                e.Vy = (Player.Vy + (Math.Abs(dy) > 10 ? Math.Sign(dy) * 0x100 : 0)) / 2;
-            }
+            e.Dir = 1;
+            int dx = DxToPlayerPx(e.X);
+            if (Math.Abs(dx) > 20) e.Vx = Player.V16 + Math.Sign(dx) * 0x40;
+            int dy = Player.PixelY - e.PixelY;
+            if (Math.Abs(dy) > 10) e.Vy = (Player.Vy + Math.Sign(dy) * 0x100) / 2;
         }
         TryShoot(e, WaveVar.BaiterShotTimer);
     }
 
+    /// <summary>TIE (defb6.src:1027-1116).</summary>
     private void BomberThink(Enemy b)
     {
-        b.Vy += Rng.Sign() * 0x10;
-        b.Vy -= b.Vy / 32;
+        b.Vy += (Rng.NextByte() & 0x3F) - 0x20;   // random nudge −32..+31
+        b.Vy -= b.Vy / 32;                        // damping
         int y = b.PixelY;
         if (OnScreen(b.X))
         {
-            int dy = Player.PixelY - y;
-            if (Math.Abs(dy) < 16) b.Vy -= Math.Sign(dy == 0 ? 1 : dy) * 0x10;
-            else if (Math.Abs(dy) > 32) b.Vy += Math.Sign(dy) * 0x10;
+            int d = y - Player.PixelY;            // positive: bomber below the player
+            if (d >= 0) { if (d >= 0x20) b.Vy -= 0x10; else if (d <= 0x10) b.Vy += 0x10; }
+            else { if (d <= -0x20) b.Vy += 0x10; else if (d >= -0x10) b.Vy -= 0x10; }
+            // Mines only from the on-screen branch, 1 in 8 updates, fewer than 10 at a time (BOMBST).
+            if ((Rng.NextByte() & 7) == 0 && Shells.Count < Arcade.MaxShells && Shells.Count(s => s.Mine) < Arcade.MaxMines)
+                Shells.Add(new Shell { X16 = b.X << 4, Y = b.Y + (3 << 8), Mine = true, Life = ((Rng.NextByte() & 0x1F) + 1) * 8 });
         }
         else
         {
-            b.CruiseY = Math.Clamp(b.CruiseY + Rng.Range(-1, 1), 64, 104);
-            b.Vy += Math.Sign(b.CruiseY - y) * 0x10;
+            int sd = Rng.NextByte();
+            if (sd <= 0x40) b.CruiseY = Math.Clamp(b.CruiseY + (sd & 3) - 2, 0x40, 0x67);
+            int diff = b.CruiseY - y;
+            // As written in the source the correction pushes *away* from the cruise altitude (INF: an original quirk).
+            if (Math.Abs(diff) > 0x10) b.Vy += diff < 0 ? 0x10 : -0x10;
         }
-        b.Vy = Math.Clamp(b.Vy, -0x100, 0x100);
-        // Lay a mine with probability 1/8 (defb6.src:1130-1149).
-        if ((Rng.NextByte() & 7) == 0 && Shells.Count < Arcade.MaxShells && Shells.Count(s => s.Mine) < Arcade.MaxMines)
-        {
-            Shells.Add(new Shell { X16 = b.X << 4, Y = b.Y + (3 << 8), Mine = true, Life = ((Rng.NextByte() & 31) + 1) * 8 });
-        }
+        b.Vy = Math.Clamp(b.Vy, -0x200, 0x200);
     }
 
     // ----- shooting -----------------------------------------------------------------------------------
@@ -403,7 +442,7 @@ public sealed partial class GameSession
         {
             if (s.Dead) continue;
             if (--s.Life <= 0) { s.Dead = true; continue; }
-            if (s.Mine) continue; // mines are world-fixed
+            if (s.Mine) { if (!OnScreen(s.X)) s.Dead = true; continue; } // world-fixed; gone once off screen
             s.X16 = (s.X16 + s.Vx16) & ((Arcade.WorldMask << 4) | 0xF);
             s.Y += s.Vy;
             int py = s.Y >> 8;
@@ -444,9 +483,8 @@ public sealed partial class GameSession
         }
         if (e.Kind == EnemyKind.Pod)
         {
-            int alive = Enemies.Count(x => !x.Dead && x.Kind == EnemyKind.Swarmer);
-            int n = Math.Min(Rng.RMax(6), Arcade.MaxSwarmers - alive);  // 1..7 swarmers (INF)
-            for (int i = 0; i < n; i++) SpawnSwarmer(e.X + Rng.Range(-64, 64), e.PixelY + Rng.Range(-4, 4), appear: false);
+            int n = Rng.RMax(6);   // 1..7 swarmers; MMSW stops at the cap of 20
+            for (int i = 0; i < n; i++) SpawnSwarmer(e.X, e.PixelY);   // exactly at the pod (MMSW)
         }
     }
 

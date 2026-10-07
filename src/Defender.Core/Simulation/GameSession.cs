@@ -4,7 +4,7 @@ using Defender.Core.Scoring;
 
 namespace Defender.Core.Simulation;
 
-public enum SessionState { Attract, LifeStart, Playing, Dying, WaveComplete, GameOver, EnterInitials }
+public enum SessionState { Attract, LifeStart, Playing, Dying, WaveComplete, GameOver, EnterInitials, TurnOver }
 
 /// <summary>
 /// Headless simulation of one cabinet. Call <see cref="Step"/> once per 1/60 s tick with that tick's input.
@@ -94,6 +94,8 @@ public sealed partial class GameSession
     private int _nextEnemyId = 1;
     private int _gexecCounter, _intraCounter, _waveTimer, _baiterTimer;
     private int _bomberSquadCounter;
+    private bool _bomberFlip;
+    private bool _waveEndedOnDeath;
     private int _starScrollAcc;
     private int _scannerTimer;
     private int _planetBlowTimer;
@@ -116,7 +118,11 @@ public sealed partial class GameSession
                 break;
             case SessionState.LifeStart:
                 StepWorldIdle();
-                if (StateTimer >= 90) BeginPlay();
+                if (StateTimer >= LifeStartFrames) BeginPlay();
+                break;
+            case SessionState.TurnOver:
+                StepWorldIdle();
+                if (StateTimer >= TurnOverFrames) SwitchPlayers();
                 break;
             case SessionState.Playing:
                 StepPlaying(input);
@@ -176,9 +182,16 @@ public sealed partial class GameSession
         _intraCounter = 0;
     }
 
+    /// <summary>1-player: a 96-frame pause. 2-player: "PLAYER n" for 128 frames, then the pause (defa7.src:1290-1305).</summary>
+    public int LifeStartFrames => PlayerCount == 2 ? 128 + 96 : 96;
+    public const int TurnOverFrames = 96;
+
     private void StartLife(bool consumeShip)
     {
         if (consumeShip) Lives--;
+        // PLRES re-creates the surviving humanoids each life: spread over the quadrants, random facing.
+        PlaceHumanoids(Humanoids.Count(h => h.Alive));
+        _intraCounter = 0;
         State = SessionState.LifeStart;
         StateTimer = 0;
         Enemies.Clear(); Shells.Clear(); Lasers.Clear(); Particles.Clear(); Popups.Clear();
@@ -212,11 +225,21 @@ public sealed partial class GameSession
             if (h.State == HumanoidState.Rescued) { h.State = HumanoidState.Falling; h.Vy = 0; h.FallFrames = 0; }
     }
 
-    private const int DeathGlowFrames = 32, DeathTotalFrames = 200;
+    // 32-frame glow, 2 frames white, ~108 frames of explosion (PLEND/PLEX, defa7.src:1328-1377, blk71.src:618-671).
+    private const int DeathGlowFrames = 32, DeathTotalFrames = 142;
 
     private void StepDying()
     {
-        // The world freezes while the ship glows (8 steps × 4 frames), flashes white, then explodes.
+        // While the ship glows the enemies keep moving (STATUS $58 does not stop VELO/OPROC/SHELL);
+        // everything freezes at the white flash, then the ship explodes.
+        if (StateTimer < DeathGlowFrames)
+        {
+            UpdateEnemies();
+            UpdateHumanoids();
+            UpdateShells();
+            Enemies.RemoveAll(e => e.Dead);
+            Shells.RemoveAll(s => s.Dead);
+        }
         if (StateTimer == DeathGlowFrames)
         {
             if (!Policy.SuppressFlashes) FlashFrames = 2;
@@ -225,6 +248,8 @@ public sealed partial class GameSession
         UpdateParticles();
         if (StateTimer < DeathTotalFrames) return;
         SaveEnemiesToReserves();
+        // A death that empties the wave still pays the wave bonus first (defa7.src:1386-1390).
+        if (EnemiesRemainingForWave == 0 && !TestHoldWave) { _waveEndedOnDeath = true; BeginWaveComplete(); return; }
         NextTurnAfterDeath();
     }
 
@@ -361,7 +386,8 @@ public sealed partial class GameSession
         }
         LoadWave();
         _sounds.Add(SoundId.WaveStart);
-        StartLife(consumeShip: false);
+        if (_waveEndedOnDeath) { _waveEndedOnDeath = false; NextTurnAfterDeath(); }
+        else StartLife(consumeShip: false);
     }
 
     public int HumanoidsBonusCounted => _bonusCounted;

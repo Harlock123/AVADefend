@@ -49,6 +49,8 @@ public sealed partial class GameSession
     {
         int cameraBefore = CameraX;
         var p = Player;
+        // Hyperspace blank: STATUS $77 freezes all movement for those 15 frames (defa7.src:3216-3218).
+        bool frozen = p.InHyperspace && !p.HyperAppearing;
         if (p.InHyperspace) StepHyperspace();
         else
         {
@@ -59,9 +61,12 @@ public sealed partial class GameSession
         int scroll = (short)(ushort)((CameraX - cameraBefore) & Arcade.WorldMask);
         UpdateStars(p.InHyperspace ? 0 : scroll);
         UpdateLasers();
-        UpdateEnemies();
-        UpdateHumanoids();
-        UpdateShells();
+        if (!frozen)
+        {
+            UpdateEnemies();
+            UpdateHumanoids();
+            UpdateShells();
+        }
         if (State == SessionState.Playing && p.Alive && !p.InHyperspace && !TestInvulnerable) PlayerCollisions();
         if (State == SessionState.Playing && ++_gexecCounter >= Arcade.GexecFrames)
         {
@@ -174,8 +179,8 @@ public sealed partial class GameSession
         }
         foreach (var h in Humanoids)
         {
-            // Airborne humanoids can be shot (no points); walking ones are not targeted (INF).
-            if (h.State is not (HumanoidState.Falling or HumanoidState.Grabbed) || !OnScreen(h.X)) continue;
+            // Any humanoid can be shot (no points): the laser scan does not skip them (ASTKIL ignores only the ship).
+            if (!h.Alive || !OnScreen(h.X)) continue;
             int sx = SignedScreenX(h.X);
             if (!Sprites.Humanoid.HitsSegment(sx, h.PixelY, x0, x1, y)) continue;
             if (dir > 0 ? sx < bestX : sx > bestX) { best = null; bestH = h; bestX = sx; }

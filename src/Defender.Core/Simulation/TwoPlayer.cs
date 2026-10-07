@@ -76,18 +76,31 @@ public sealed partial class GameSession
             var other = _slots[1 - CurrentPlayer];
             if (other is { Out: false })
             {
-                var mine = CapturePlayer();
-                mine.Out = currentOut;
-                _slots[CurrentPlayer] = mine;
-                _slots[1 - CurrentPlayer] = null;
-                ApplyPlayer(other);
-                CurrentPlayer = 1 - CurrentPlayer;
-                StartLife(consumeShip: true);
+                if (currentOut)
+                {
+                    // "PLAYER n / GAME OVER" for 96 frames before the other player continues (defa7.src:1391-1411).
+                    State = SessionState.TurnOver;
+                    StateTimer = 0;
+                    return;
+                }
+                SwitchPlayers();
                 return;
             }
         }
         if (!currentOut) { StartLife(consumeShip: true); return; }
         EnterGameOver();
+    }
+
+    private void SwitchPlayers()
+    {
+        var other = _slots[1 - CurrentPlayer]!;
+        var mine = CapturePlayer();
+        mine.Out = Lives <= 0;
+        _slots[CurrentPlayer] = mine;
+        _slots[1 - CurrentPlayer] = null;
+        ApplyPlayer(other);
+        CurrentPlayer = 1 - CurrentPlayer;
+        StartLife(consumeShip: true);
     }
 
     /// <summary>Queue initials entry for every player whose final score qualifies (player one first).</summary>

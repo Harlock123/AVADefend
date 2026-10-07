@@ -51,7 +51,8 @@ public sealed class SoftwareRenderer
         }
         DrawPlayfield(s);
         DrawHud(s, false);
-        if (s.State == SessionState.LifeStart) CenterText(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 120, _pal[Pal.White]);
+        if (s.State == SessionState.LifeStart && s.PlayerCount == 2 && s.StateTimer < 128) CenterText(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 120, _pal[Pal.White]);
+        if (s.State == SessionState.TurnOver) { CenterText(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 112, _pal[Pal.White]); CenterText("GAME OVER", 124, _pal[Pal.White]); }
         if (s.State == SessionState.WaveComplete) DrawWaveComplete(s);
         if (s.Paused) { CenterText("PAUSED", 116, _pal[Pal.White]); CenterText("ESC / START TO RESUME", 128, _pal[Pal.Grey]); if (StatusLine is { } st) CenterText(st, 140, _pal[Pal.Yellow]); }
     }

@@ -98,7 +98,7 @@ public sealed partial class GameSession
         Initials.CopyTo(s.Initials, 0);
         s.InitialsCursor = InitialsCursor;
 
-        bool inPlay = State is SessionState.LifeStart or SessionState.Playing or SessionState.Dying or SessionState.WaveComplete;
+        bool inPlay = State is SessionState.LifeStart or SessionState.Playing or SessionState.Dying or SessionState.WaveComplete or SessionState.TurnOver;
         bool dyingHidden = State == SessionState.Dying && StateTimer >= DeathGlowFrames;
         s.HyperspaceBlank = State == SessionState.Playing && Player.InHyperspace && !Player.HyperAppearing;
         s.PlayerVisible = inPlay && State != SessionState.WaveComplete && !dyingHidden && !s.HyperspaceBlank;

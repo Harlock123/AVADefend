@@ -19,7 +19,7 @@ public class PerformanceTests(ITestOutputHelper output)
         for (int i = 0; i < 6; i++) s.TestSpawn(EnemyKind.Pod, s.WorldAtScreen(50 * i), 120);
         for (int i = 0; i < 5; i++) s.TestSpawn(EnemyKind.Bomber, s.WorldAtScreen(60 * i), 90);
         foreach (var e in s.Enemies) e.ShotTimer = 1;
-        int Respawn() { int n = 0; while (s.Enemies.Count < 45) { s.TestSpawn(EnemyKind.Swarmer, s.WorldAtScreen(n++ * 13 % 290), 60 + n * 5 % 150).ShotTimer = 1; } return n; }
+        int Respawn() { int n = 0; while (s.Enemies.Count < 45) { s.TestSpawn(n % 2 == 0 ? EnemyKind.Swarmer : EnemyKind.Baiter, s.WorldAtScreen(n++ * 13 % 290), 60 + n * 5 % 150).ShotTimer = 1; } return n; }
         var snap = new FrameSnapshot();
         var r = new SoftwareRenderer();
         var input = new PlayerInput { ThrustHeld = true, Vertical = 0 };

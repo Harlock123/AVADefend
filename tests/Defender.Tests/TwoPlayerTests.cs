@@ -13,14 +13,16 @@ public class TwoPlayerTests
     }
 
     /// <summary>Kill the flying player by ramming a mutant, then let the death sequence finish.</summary>
-    private static void Die(GameSession s)
+    private static int Die(GameSession s)
     {
-        s.RunUntil(() => s.State == SessionState.Playing, 400);
+        s.RunUntil(() => s.State == SessionState.Playing, 600);
+        int who = s.CurrentPlayer;
         var e = s.TestSpawn(EnemyKind.Mutant, s.Player.WorldX(s.CameraX), s.Player.PixelY);
         e.Vx = e.Vy = 0; e.Nap = 1000;
         s.Step(default);
         Assert.Equal(SessionState.Dying, s.State);
         s.RunUntil(() => s.State != SessionState.Dying, 400);
+        return who;
     }
 
     [Fact]
@@ -63,11 +65,19 @@ public class TwoPlayerTests
         s.TestAddScore(2000);
         // P1, P2, P1, P2, P1 (P1 out), P2, P2? — each has 3 ships: 6 deaths end the game.
         var order = new List<int>();
+        bool sawTurnOver = false;
         while (s.State is not (SessionState.GameOver or SessionState.EnterInitials or SessionState.Attract))
         {
-            order.Add(s.CurrentPlayer);
-            Die(s);
+            order.Add(Die(s));
+            if (s.State == SessionState.TurnOver)
+            {
+                sawTurnOver = true;
+                Assert.Equal(0, s.CurrentPlayer);              // "PLAYER ONE / GAME OVER" is shown first
+                s.Run(GameSession.TurnOverFrames);
+                Assert.Equal(1, s.CurrentPlayer);
+            }
         }
+        Assert.True(sawTurnOver);
         Assert.Equal([0, 1, 0, 1, 0, 1], order);
         Assert.Equal(SessionState.GameOver, s.State);
         s.RunUntil(() => s.State == SessionState.EnterInitials, 400);

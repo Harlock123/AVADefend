@@ -15,6 +15,9 @@ public enum WaveVar
 /// <summary>One row: clamp range, intra-wave delta (every 10 s), inter-wave delta, and values for waves 1-4.</summary>
 public sealed record WaveRow(WaveVar Var, int Max, int Min, int Intra, int Inter, int W1, int W2, int W3, int W4)
 {
+    /// <summary>LNDYV/SZYV are MSB+LSB byte rows in WVTAB; deltas act on the LSB only and never carry (WDELT).</summary>
+    public bool SplitBytes => Var is WaveVar.LanderYV or WaveVar.MutantYV;
+
     public int Base(int wave) => Math.Min(Math.Max(wave, 1), 4) switch { 1 => W1, 2 => W2, 3 => W3, _ => W4 };
 }
 
@@ -109,6 +112,11 @@ public sealed class WaveParams
     internal static int ApplyDelta(int v, int delta, WaveRow r)
     {
         if (delta == 0) return v;
+        if (r.SplitBytes)
+        {
+            int lsb = (v & 0xFF) + delta;
+            return lsb is < 0 or > 0xFF ? v : (v & 0xFF00) | lsb;
+        }
         int n = v + delta;
         if (delta > 0 && n > r.Max) return v;
         if (delta < 0 && n < r.Min) return v;
