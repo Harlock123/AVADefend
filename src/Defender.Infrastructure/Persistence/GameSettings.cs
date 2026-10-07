@@ -26,6 +26,12 @@ public sealed class GameSettings : IVersioned
     // Modern only, opt-in: hold fire to repeat (the original is one shot per press).
     public bool HoldToFire { get; set; }
 
+    /// <summary>Cocktail-table presentation: the picture rotates 180° while player two is up (both presets).</summary>
+    public bool CocktailFlip { get; set; }
+
+    /// <summary>Modern only: which suspend slot (1-3) is written on close and resumed.</summary>
+    public int SuspendSlot { get; set; } = 1;
+
     // Accessibility (Modern only; disclosed on HUD when != 1)
     public double GameSpeed { get; set; } = 1.0;
 
@@ -36,6 +42,7 @@ public sealed class GameSettings : IVersioned
         EffectsVolume = Clamp01(EffectsVolume);
         AmbienceVolume = Clamp01(AmbienceVolume);
         GameSpeed = double.IsFinite(GameSpeed) ? Math.Clamp(GameSpeed, 0.5, 1.0) : 1.0;
+        SuspendSlot = Math.Clamp(SuspendSlot, 1, 3);
         if (!Enum.IsDefined(Mode)) Mode = GameMode.Classic;
         Bindings = (Bindings ?? InputBindings.CreateDefault()).Sanitized();
         return this;

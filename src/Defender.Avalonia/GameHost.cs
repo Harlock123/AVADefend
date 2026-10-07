@@ -79,16 +79,18 @@ public sealed class GameHost : IDisposable
         if (Settings.Mode != GameMode.Modern || !Session.CanSuspend) return false;
         try
         {
-            _storage.Suspend(1).Save(new SuspendFile { SavedUtc = DateTime.UtcNow, Data = Session.CaptureSuspend() });
+            _storage.Suspend(Settings.SuspendSlot).Save(new SuspendFile { SavedUtc = DateTime.UtcNow, Data = Session.CaptureSuspend() });
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Messages.Add("Could not suspend: " + ex.Message); return false; }
     }
 
     /// <summary>Resume consumes the slot, so it works as suspend/resume, not as a repeatable save state.</summary>
-    private void TryResume()
+    /// <summary>Resumes the selected slot if it holds a game and we are on the title screen (Modern only).</summary>
+    public void TryResume()
     {
-        var store = _storage.Suspend(1);
+        if (Settings.Mode != GameMode.Modern || Session.State != SessionState.Attract) return;
+        var store = _storage.Suspend(Settings.SuspendSlot);
         var r = store.Load();
         if (r.Status == LoadStatus.Missing) return;
         if (r.Message is { } m) Messages.Add(m);
@@ -104,6 +106,15 @@ public sealed class GameHost : IDisposable
         }
         catch (InvalidDataException ex) { Messages.Add("Suspend file ignored: " + ex.Message); }
         finally { try { store.Delete(); } catch (IOException) { } }
+    }
+
+    /// <summary>Describes a suspend slot for the settings UI without consuming it.</summary>
+    public string DescribeSlot(int slot)
+    {
+        var path = _storage.Suspend(slot).FilePath;
+        if (!File.Exists(path)) return "empty";
+        var r = _storage.Suspend(slot).Load();   // a corrupt file is quarantined here, which is fine
+        return r.Value.Data is { } d ? $"wave {d.Wave}, score {d.Score}, saved {r.Value.SavedUtc.ToLocalTime():g}" : "unreadable";
     }
 
     public void SaveSettings()

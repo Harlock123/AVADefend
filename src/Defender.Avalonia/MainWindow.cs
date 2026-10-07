@@ -13,6 +13,7 @@ public sealed class MainWindow : Window
     private readonly GameView _view;
     private readonly Border _help;
     private readonly SettingsPanel _settings;
+    private readonly TextBlock _hintBar;
     private WindowState _restoreState = WindowState.Normal;
 
     public MainWindow() : this(new GameHost()) { }
@@ -27,7 +28,17 @@ public sealed class MainWindow : Window
         _view = new GameView(host) { Focusable = true };
         _help = BuildHelp();
         _settings = new SettingsPanel(host, () => CloseSettings()) { IsVisible = false };
-        Content = new Grid { Children = { _view, _help, _settings } };
+        _hintBar = new TextBlock
+        {
+            FontFamily = new FontFamily("monospace"), FontSize = 12, Foreground = Brushes.Gray,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center, Margin = new Thickness(4, 2),
+        };
+        var dock = new DockPanel();
+        DockPanel.SetDock(_hintBar, Dock.Bottom);
+        dock.Children.Add(_hintBar);
+        dock.Children.Add(_view);
+        Content = new Grid { Children = { dock, _help, _settings } };
+        RefreshHintBar();
         if (host.Settings.Fullscreen) SetFullscreen(true);
 
         AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: false);
@@ -96,11 +107,24 @@ public sealed class MainWindow : Window
         _settings.IsVisible = true;
     }
 
+    /// <summary>Modern: a one-line control reminder below the picture (never drawn over the game).</summary>
+    private void RefreshHintBar()
+    {
+        var s = _host.Settings;
+        _hintBar.IsVisible = s.Mode == GameMode.Modern && s.ShowControlHints;
+        string K(Core.Input.LogicalButton b) => s.Bindings.Keyboard.GetValueOrDefault(b)?.FirstOrDefault() ?? "?";
+        _hintBar.Text = $"Thrust {K(Core.Input.LogicalButton.Thrust)}  Reverse {K(Core.Input.LogicalButton.Reverse)}  " +
+                        $"Fire {K(Core.Input.LogicalButton.Fire)}  Bomb {K(Core.Input.LogicalButton.SmartBomb)}  " +
+                        $"Hyperspace {K(Core.Input.LogicalButton.Hyperspace)}  Pause {K(Core.Input.LogicalButton.Pause)}  F1 help";
+    }
+
     private void CloseSettings()
     {
         _settings.IsVisible = false;
         _host.ApplySettings();
         _host.SaveSettings();
+        _host.TryResume();
+        RefreshHintBar();
         _view.Focus();
     }
 

@@ -60,7 +60,8 @@ public sealed class SettingsPanel : Border
 
         Header("Display");
         Check("Integer scaling (sharpest pixels)", s.IntegerScaling, v => s.IntegerScaling = v);
-        Check("Show control hints on title screen", s.ShowControlHints, v => s.ShowControlHints = v);
+        Check("Show control hints (title screen; Modern: reminder bar below the picture)", s.ShowControlHints, v => s.ShowControlHints = v);
+        Check("Cocktail table: rotate the picture for player two", s.CocktailFlip, v => s.CocktailFlip = v);
 
         Header("Modern preset only");
         Check("Smooth (bilinear) scaling", s.SmoothScaling, v => s.SmoothScaling = v);
@@ -72,6 +73,9 @@ public sealed class SettingsPanel : Border
         speed.SelectedIndex = Math.Max(0, Array.IndexOf(speeds, s.GameSpeed));
         speed.SelectionChanged += (_, _) => s.GameSpeed = speeds[Math.Max(0, speed.SelectedIndex)];
         Labeled("Game speed (shown on HUD)", speed);
+        var slot = new ComboBox { ItemsSource = new[] { 1, 2, 3 }.Select(n => $"Slot {n}: {_host.DescribeSlot(n)}").ToArray(), SelectedIndex = s.SuspendSlot - 1 };
+        slot.SelectionChanged += (_, _) => s.SuspendSlot = Math.Max(0, slot.SelectedIndex) + 1;
+        Labeled("Suspend slot (closing mid-game saves here; selecting a full slot resumes it)", slot);
 
         Header("Gamepad");
         Note(_host.Gamepad?.Status ?? "Gamepad support disabled");

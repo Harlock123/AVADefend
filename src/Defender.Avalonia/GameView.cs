@@ -70,6 +70,9 @@ public sealed class GameView : Control
         Renderer.GameSpeed = Host.Scheduler.TimeScale;
         Renderer.StatusLine = Host.Messages.LastOrDefault();
         Renderer.Render(Host.Snapshot);
+        var snap = Host.Snapshot;
+        // Cocktail table: player two sits opposite, so their turns are drawn rotated 180°.
+        if (s.CocktailFlip && snap.PlayerCount == 2 && snap.CurrentPlayer == 1 && !snap.Demo) Array.Reverse(Renderer.Pixels);
         using (var fb = _bitmap.Lock())
         {
             fixed (uint* src = Renderer.Pixels)
