@@ -134,8 +134,7 @@ public sealed partial class GameSession
         var e = NewEnemy(EnemyKind.Baiter, CameraX + Rng.Next(32) * 256, Rng.Range(Arcade.YMin + 10, Arcade.YMax - 20));
         e.ShotTimer = 8;
         e.Anim = 0;
-        e.Nap = 1;
-        _sounds.Add(SoundId.BaiterAppear);
+        e.Nap = 1;   // its only sound is the generic appear (APSND) from NewEnemy
     }
 
     // ----- game executive (every 15 frames) --------------------------------------------------------
@@ -292,6 +291,7 @@ public sealed partial class GameSession
                 if (e.PixelY <= Arcade.YMin + 8)
                 {
                     if (!CarryingTarget(e)) { ReturnToReserve(e); return; }
+                    _sounds.Add(SoundId.LanderSuck);   // LSKSND
                     e.Phase = LanderPhase.Absorb;
                     e.Vy = 0;
                 }
@@ -369,7 +369,7 @@ public sealed partial class GameSession
         if (Math.Sign(dx) == e.Dir && OnScreen(e.X) && --e.ShotTimer <= 0)
         {
             e.ShotTimer = Rng.RMax(Params[WaveVar.SwarmerShotTimer]);
-            FireShell(e.X, e.Y, e.Vx * 8 * 16, dy / 32);
+            FireShell(e.X, e.Y, e.Vx * 8 * 16, dy / 32, SoundId.SwarmerShot);
         }
     }
 
@@ -428,14 +428,14 @@ public sealed partial class GameSession
         int dRows = (sbyte)((lseed & 0x1F) - 16 + Player.PixelY - e.PixelY);
         int vx16 = dCols * 16;                                // d cols × 2 px / 64 frames = d world units/frame
         if (seed > 120) vx16 += Player.V16 * 16;              // add the ship's velocity in ~53% of shots
-        FireShell(e.X, e.Y, vx16, dRows * 4);
+        FireShell(e.X, e.Y, vx16, dRows * 4, e.Kind == EnemyKind.Mutant ? SoundId.MutantShot : SoundId.EnemyShot);
     }
 
-    private void FireShell(int x, int y, int vx16, int vy)
+    private void FireShell(int x, int y, int vx16, int vy, SoundId sound)
     {
         if (Shells.Count >= Arcade.MaxShells || !OnScreen(x) || (y >> 8) <= Arcade.YMin) return;
         Shells.Add(new Shell { X16 = x << 4, Y = y, Vx16 = vx16, Vy = vy, Life = Arcade.ShellLifetimeFrames });
-        _sounds.Add(SoundId.EnemyShot);
+        _sounds.Add(sound);
     }
 
     private void UpdateShells()
@@ -469,7 +469,15 @@ public sealed partial class GameSession
             EnemyKind.Lander => Pal.Green, EnemyKind.Bomber => Pal.BomberD, EnemyKind.Pod => Pal.Purple,
             EnemyKind.Swarmer => Pal.Red, EnemyKind.Baiter => Pal.Green, _ => Pal.CycleC,
         });
-        _sounds.Add(e.Kind == EnemyKind.Pod ? SoundId.PodExplode : SoundId.EnemyExplode);
+        _sounds.Add(e.Kind switch
+        {
+            EnemyKind.Lander => SoundId.EnemyExplode,   // LHSND
+            EnemyKind.Mutant => SoundId.MutantHit,      // SCHSND
+            EnemyKind.Baiter => SoundId.BaiterHit,      // UFHSND
+            EnemyKind.Bomber => SoundId.BomberHit,      // TIHSND
+            EnemyKind.Pod => SoundId.PodExplode,        // PRHSND
+            _ => SoundId.SwarmerHit,                    // SWHSND
+        });
 
         if (e.Kind == EnemyKind.Lander && e.Target >= 0)
         {

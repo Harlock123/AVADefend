@@ -240,3 +240,46 @@ public class MixerMuteRegressionTests
         Assert.Equal(0, m.ActiveVoices); // it played out silently instead of resuming on unmute
     }
 }
+
+public class MonophonicBoardTests
+{
+    private static Mixer Mono() => new(SoundSynth.RenderAll()) { Monophonic = true };
+
+    [Fact]
+    public void LowerPriorityIsRejected_EqualOrHigherInterrupts()
+    {
+        var m = Mono();
+        m.Play(SoundId.SmartBomb);          // $E8
+        m.Play(SoundId.Fire);               // $C0: rejected
+        Assert.Equal(1, m.ActiveVoices);
+        m.Play(SoundId.PlayerExplode);      // $F0: interrupts
+        Assert.Equal(1, m.ActiveVoices);
+        var buf = new float[200_000];
+        m.Mix(buf);                         // sequence over → priority resets
+        m.Play(SoundId.Fire);
+        Assert.Equal(1, m.ActiveVoices);
+    }
+
+    [Fact]
+    public void ThrustIsSilentWhileAnotherSoundPlays()
+    {
+        var m = Mono();
+        m.EffectsVolume = 0;                // isolate the thrust contribution
+        m.SetLooping(SoundId.Thrust, true);
+        var buf = new float[512];
+        m.Mix(buf);
+        Assert.Contains(buf, x => x != 0);
+        m.Play(SoundId.Fire);
+        m.Mix(buf);
+        Assert.All(buf, x => Assert.Equal(0f, x));
+    }
+
+    [Fact]
+    public void Polyphonic_ModernMode_MixesBoth()
+    {
+        var m = new Mixer(SoundSynth.RenderAll());
+        m.Play(SoundId.SmartBomb);
+        m.Play(SoundId.Fire);
+        Assert.Equal(2, m.ActiveVoices);
+    }
+}

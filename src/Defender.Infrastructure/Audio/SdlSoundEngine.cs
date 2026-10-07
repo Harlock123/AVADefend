@@ -36,6 +36,7 @@ public sealed unsafe class SdlSoundEngine : ISoundEngine
     public float EffectsVolume { get => _mixer!.EffectsVolume; set => _mixer!.EffectsVolume = Math.Clamp(value, 0, 1); }
     public float AmbienceVolume { get => _mixer!.AmbienceVolume; set => _mixer!.AmbienceVolume = Math.Clamp(value, 0, 1); }
     public bool Muted { get => _mixer!.Muted; set => _mixer!.Muted = value; }
+    public bool Monophonic { get => _mixer!.Monophonic; set => _mixer!.Monophonic = value; }
 
     public static ISoundEngine CreateOrFallback()
     {

@@ -284,8 +284,7 @@ public sealed partial class GameSession
     private void EnterGameOver()
     {
         State = SessionState.GameOver;
-        StateTimer = 0;
-        _sounds.Add(SoundId.GameOver);
+        StateTimer = 0;   // the original only silences the board here ($13)
     }
 
     private void AfterGameOver()
@@ -376,7 +375,6 @@ public sealed partial class GameSession
             _bonusCounted++;
             AddScore(WaveBonusPerHumanoid);
             WaveBonusAwarded += WaveBonusPerHumanoid;
-            _sounds.Add(SoundId.WaveBonus);
         }
         if (StateTimer < alive * 4 + 128) return;
         Wave++;
@@ -386,7 +384,6 @@ public sealed partial class GameSession
             PlaceHumanoids(Arcade.HumanoidCount);
         }
         LoadWave();
-        _sounds.Add(SoundId.WaveStart);
         if (_waveEndedOnDeath) { _waveEndedOnDeath = false; NextTurnAfterDeath(); }
         else StartLife(consumeShip: false);
     }

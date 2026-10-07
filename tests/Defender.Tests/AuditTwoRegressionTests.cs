@@ -71,4 +71,35 @@ public class AuditTwoRegressionTests
         Assert.Equal((152, 167), (snap.ScannerWindowLeft, snap.ScannerWindowRight));
         Assert.Equal(150 + s.Player.ScreenPx / 32 * 2, snap.ScannerPlayerX);
     }
+
+    [Theory]
+    [InlineData(EnemyKind.Lander, Core.Audio.SoundId.EnemyExplode)]
+    [InlineData(EnemyKind.Mutant, Core.Audio.SoundId.MutantHit)]
+    [InlineData(EnemyKind.Baiter, Core.Audio.SoundId.BaiterHit)]
+    [InlineData(EnemyKind.Bomber, Core.Audio.SoundId.BomberHit)]
+    [InlineData(EnemyKind.Pod, Core.Audio.SoundId.PodExplode)]
+    [InlineData(EnemyKind.Swarmer, Core.Audio.SoundId.SwarmerHit)]
+    public void EachEnemyKind_HasItsOwnHitSound(EnemyKind kind, Core.Audio.SoundId expected)
+    {
+        var t = TestUtil.NewPlaying();
+        // Row 2 of every enemy sprite is solid; the laser runs along ship Y + 4.
+        var target = t.TestSpawn(kind, t.WorldAtScreen(150), t.Player.PixelY + 2);
+        target.Vx = target.Vy = 0; target.Nap = 1000;
+        var heard = new List<Core.Audio.SoundId>();
+        t.Step(new PlayerInput { FirePressed = true });
+        for (int i = 0; i < 30 && !target.Dead; i++) { t.Step(default); heard.AddRange(t.Sounds); }
+        Assert.True(target.Dead);
+        Assert.Contains(expected, heard);
+    }
+
+    [Fact]
+    public void Hyperspace_IsSilentOnEntry_AppearSoundOnReturn()
+    {
+        var s = TestUtil.NewPlaying();
+        s.Step(new PlayerInput { HyperspacePressed = true });
+        Assert.DoesNotContain(Core.Audio.SoundId.Hyperspace, s.Sounds);
+        var heard = new List<Core.Audio.SoundId>();
+        for (int i = 0; i < Arcade.HyperspaceBlankFrames; i++) { s.Step(default); heard.AddRange(s.Sounds); }
+        Assert.Contains(Core.Audio.SoundId.LanderMaterialize, heard);
+    }
 }

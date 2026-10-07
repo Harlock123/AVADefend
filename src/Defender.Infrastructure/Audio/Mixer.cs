@@ -39,6 +39,27 @@ public sealed class Mixer
     public float AmbienceVolume { get; set; } = 0.6f;
     public bool Muted { get; set; }
 
+    /// <summary>
+    /// Classic sound model: the Williams board plays one sound at a time. A new sound starts only if its script
+    /// priority is at least the current one's (SNDLD, defa7.src:708-722); thrust is heard only when no other
+    /// sound is playing (SNDSEQ). Modern leaves this off and mixes everything.
+    /// </summary>
+    public bool Monophonic { get; set; }
+
+    /// <summary>Script priorities from the original sound table (defa7.src:659-691).</summary>
+    public static int OriginalPriority(SoundId id) => id switch
+    {
+        SoundId.ExtraLife => 0xFF,
+        SoundId.PlayerExplode or SoundId.GameStart => 0xF0,
+        SoundId.PlanetExplode or SoundId.SmartBomb => 0xE8,
+        SoundId.HumanoidCaught or SoundId.HumanoidLanded or SoundId.HumanoidDies => 0xE0,
+        SoundId.HumanoidFalling => 0xD8,
+        SoundId.LanderMaterialize or SoundId.PodExplode or SoundId.MutantHit or SoundId.BaiterHit or SoundId.BomberHit
+            or SoundId.EnemyExplode or SoundId.Abduction => 0xD0,
+        SoundId.LanderSuck => 0xC8,
+        _ => 0xC0, // laser, enemy shots, swarmer hit
+    };
+
     public int ActiveVoices { get { lock (_lock) return _voices.Count(v => v.Active); } }
 
     public static int PriorityOf(SoundId id) => id switch
@@ -60,6 +81,15 @@ public sealed class Mixer
         int pri = PriorityOf(id);
         lock (_lock)
         {
+            if (Monophonic)
+            {
+                var current = _voices.FirstOrDefault(x => x.Active && !x.Loop);
+                if (current is not null && OriginalPriority(id) < OriginalPriority(current.Id)) return;
+                foreach (var v1 in _voices) if (v1.Active && !v1.Loop) v1.Active = false;
+                var free = _voices.FirstOrDefault(x => !x.Active);
+                if (free is not null) Start(free, id, clip, pri, loop: false);
+                return;
+            }
             // Rapid re-triggers of the same short effect restart the existing voice instead of stacking.
             var v = _voices.FirstOrDefault(x => x.Active && !x.Loop && x.Id == id && x.Pos < 400)
                     ?? _voices.FirstOrDefault(x => !x.Active)
@@ -113,6 +143,8 @@ public sealed class Mixer
             {
                 if (!v.Active) continue;
                 float vol = v.Ambience ? AmbienceVolume : EffectsVolume;
+                // Mono board: the thrust drone is silent while any other sound plays.
+                if (Monophonic && v.Loop && _voices.Any(x => x.Active && !x.Loop)) vol = 0;
                 var clip = v.Clip;
                 for (int i = 0; i < output.Length; i++)
                 {

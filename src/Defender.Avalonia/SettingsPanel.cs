@@ -56,6 +56,7 @@ public sealed class SettingsPanel : Border
         Slider("Effects volume", s.EffectsVolume, v => s.EffectsVolume = (float)v);
         Slider("Thrust / ambience volume", s.AmbienceVolume, v => s.AmbienceVolume = (float)v);
         Check("Mute all audio", s.AudioMuted, v => s.AudioMuted = v);
+        Check("Modern: original one-sound-at-a-time board (Classic always uses it)", s.ClassicSoundInModern, v => s.ClassicSoundInModern = v);
         Note("Audio: " + _host.Audio.Status);
 
         Header("Display");

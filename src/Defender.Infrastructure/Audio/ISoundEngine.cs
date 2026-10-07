@@ -9,6 +9,8 @@ public interface ISoundEngine : IDisposable
     float EffectsVolume { get; set; }
     float AmbienceVolume { get; set; }
     bool Muted { get; set; }
+    /// <summary>Classic one-sound-at-a-time model (see <see cref="Mixer.Monophonic"/>).</summary>
+    bool Monophonic { get; set; }
     void Play(SoundId id);
     /// <summary>Starts or stops a looping sound (e.g. thrust). Idempotent.</summary>
     void SetLooping(SoundId id, bool on);
@@ -22,6 +24,7 @@ public sealed class NullSoundEngine(string status = "Audio disabled") : ISoundEn
     public float EffectsVolume { get; set; } = 1;
     public float AmbienceVolume { get; set; } = 1;
     public bool Muted { get; set; }
+    public bool Monophonic { get; set; }
     public void Play(SoundId id) { }
     public void SetLooping(SoundId id, bool on) { }
     public void StopAll() { }

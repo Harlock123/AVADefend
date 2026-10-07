@@ -227,8 +227,7 @@ public sealed partial class GameSession
         p.InHyperspace = true;
         p.HyperAppearing = false;
         p.HyperTimer = Arcade.HyperspaceBlankFrames;
-        Lasers.Clear();
-        _sounds.Add(Audio.SoundId.Hyperspace);
+        Lasers.Clear();   // HYPER itself makes no sound; the ship's reappearance plays the appear sound
     }
 
     private void StepHyperspace()
@@ -247,6 +246,7 @@ public sealed partial class GameSession
             p.VyMag = p.Vy = 0;
             p.HyperAppearing = true;
             p.HyperTimer = Arcade.HyperspaceAppearFrames;
+            _sounds.Add(Audio.SoundId.LanderMaterialize);   // APSND via APVCT
             return;
         }
         p.InHyperspace = false;

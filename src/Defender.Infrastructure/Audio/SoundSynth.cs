@@ -54,6 +54,13 @@ public static class SoundSynth
         SoundId.ExtraLife => Arpeggio([784, 1047, 1319, 1568, 2093, 1568, 2093], 0.06, 0.3),
         SoundId.GameStart => Sweep(0.9, 150, 1600, Square, 0.25, vibratoHz: 14),
         SoundId.GameOver => Arpeggio([523, 392, 330, 262, 196], 0.18, 0.3),
+        SoundId.MutantHit => Mix(Noise(0.5, 0.7, 0.9, 0.03, seed: 21), Sweep(0.5, 160, 50, Square, 0.3, decay: 2)),
+        SoundId.BomberHit => Noise(0.5, 0.8, 0.6, 0.04, seed: 22),
+        SoundId.BaiterHit => Mix(Noise(0.4, 0.6, 1.0, 0.08, seed: 23), Sweep(0.4, 1800, 300, Square, 0.2, decay: 2)),
+        SoundId.SwarmerHit => Mix(Noise(0.3, 0.5, 1.0, 0.1, seed: 24), Sweep(0.3, 1800, 300, Square, 0.15, decay: 2)),
+        SoundId.MutantShot => Sweep(0.07, 900, 600, Square, 0.15),
+        SoundId.SwarmerShot => Sweep(0.05, 2400, 2000, Square, 0.12),
+        SoundId.LanderSuck => Sweep(0.5, 120, 900, Triangle, 0.3, vibratoHz: 20),
         _ => [],
     };
 

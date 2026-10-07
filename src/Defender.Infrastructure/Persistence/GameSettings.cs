@@ -32,6 +32,9 @@ public sealed class GameSettings : IVersioned
     /// <summary>Modern only: draw scanner blips 3×3 for readability on large displays.</summary>
     public bool BoldScanner { get; set; }
 
+    /// <summary>Modern: use the original one-sound-at-a-time board model (Classic always does).</summary>
+    public bool ClassicSoundInModern { get; set; }
+
     /// <summary>Modern only: which suspend slot (1-3) is written on close and resumed.</summary>
     public int SuspendSlot { get; set; } = 1;
 

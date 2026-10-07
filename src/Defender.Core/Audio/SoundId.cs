@@ -25,5 +25,12 @@ public enum SoundId
     ExtraLife,
     GameStart,
     GameOver,
+    MutantHit,       // SCHSND
+    BomberHit,       // TIHSND
+    BaiterHit,       // UFHSND (same board sound as SWHSND, higher priority)
+    SwarmerHit,      // SWHSND
+    MutantShot,      // SSHSND
+    SwarmerShot,     // SWSSND
+    LanderSuck,      // LSKSND (lander reaches the top with its humanoid)
     Count
 }

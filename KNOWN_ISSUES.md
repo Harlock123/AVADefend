@@ -19,7 +19,7 @@ The list of open questions is in RESEARCH.md. Briefly:
 - The RNG does not match the original byte for byte, so runs cannot be compared exactly against MAME.
 - A second, line-by-line audit against the source fixed 18 discrepancies and settled the earlier "inferred" items: ramming scores, a shot hitting the player scores 25, walking humanoids can be shot, and the mutant window, bomber layout and death/restart flow are now as written (see RESEARCH.md).
 - Still open: the off-screen bomber altitude correction, which as written pushes bombers away from their cruise height (implemented as written). The smart-bomb question is resolved: materialising enemies are immune, as in ours.
-- Reconstructions that remain: planet-explosion debris visuals.
+- Reconstructions that remain: the look of explosion debris, and sound timbres (event timing, priorities and the one-at-a-time model now follow the source).
 - The terrain profile is deliberately not the arcade's (it is generated under the same constraints).
 - The sprite shapes and colour tables are original approximations, not the arcade's.
 - High scores: like the original we keep "Today's" (8, reset daily) and "All-Time" tables, but All-Time holds 10 rather than 8, as the brief asked.

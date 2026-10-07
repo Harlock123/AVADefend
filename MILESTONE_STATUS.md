@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 157 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 174 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -147,6 +147,12 @@ A fresh read-only review found 8 defects plus 3 minor ones; all are fixed with r
 | A temporarily unreadable save file was quarantined, then overwritten with defaults | Low | Left untouched and write-protected for the session |
 | Closing during a death, a turn-over or initials lost the game or the entry | Low | Suspend covers death and turn-over; initials are committed on close |
 | F1 help stale after rebinding; speed combo misread; Backspace-reset could double-bind | Minor | Fixed |
+
+## Round 8: second source-fidelity audit
+
+A second line-by-line audit (player, humanoids, shells, scanner, stars, sound triggers) found 10 discrepancies plus sound-trigger differences; all fixed with tests (`AuditTwoRegressionTests`, `MonophonicBoardTests`, `ScrollFidelityTests`). The largest: ship-slide snaps were wrongly scroll-compensated, which changed scroll feel during acceleration; humanoids walked 1.6× too fast; smart bombs re-armed too early (a double tap spent two); enemy shot aim used pixels instead of byte columns; the planet explosion ran twice as long. The Classic sound model is now the original one-at-a-time priority board.
+
+Also added: `--selftest` (CI runs it on every packaged build) and F9 as a second Settings key.
 
 ## Next concrete tasks
 

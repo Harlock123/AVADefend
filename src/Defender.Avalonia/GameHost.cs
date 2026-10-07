@@ -134,6 +134,7 @@ public sealed class GameHost : IDisposable
         Audio.EffectsVolume = Settings.EffectsVolume;
         Audio.AmbienceVolume = Settings.AmbienceVolume;
         Audio.Muted = Settings.AudioMuted;
+        Audio.Monophonic = !modern || Settings.ClassicSoundInModern;
         if (Session.Policy.Mode != Settings.Mode && Session.State == SessionState.Attract) Session = CreateSession();
         else if (Session.Policy.Mode == Settings.Mode) Session.Policy = PolicyFor(Settings);
     }
