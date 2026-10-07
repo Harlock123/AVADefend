@@ -51,7 +51,7 @@ public sealed class SoftwareRenderer
         }
         DrawPlayfield(s);
         DrawHud(s, false);
-        if (s.State == SessionState.LifeStart) CenterText("PLAYER ONE", 120, _pal[Pal.White]);
+        if (s.State == SessionState.LifeStart) CenterText(s.CurrentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 120, _pal[Pal.White]);
         if (s.State == SessionState.WaveComplete) DrawWaveComplete(s);
         if (s.Paused) { CenterText("PAUSED", 116, _pal[Pal.White]); CenterText("ESC / START TO RESUME", 128, _pal[Pal.Grey]); if (StatusLine is { } st) CenterText(st, 140, _pal[Pal.Yellow]); }
     }
@@ -174,17 +174,32 @@ public sealed class SoftwareRenderer
             }
         }
 
-        // Player one panel: reserve ships, smart bombs, score (left of the scanner).
-        for (int i = 0; i < Math.Min(s.Lives, 5); i++) DrawSprite(Sprites.ShipIcon, 18 + i * 12, 10);
-        for (int i = 0; i < Math.Min(s.SmartBombs, 3); i++) DrawSprite(Sprites.BombIcon, 84, 16 + i * 5);
-        string score = s.Score > 0 || !attract ? s.Score.ToString() : "";
-        Text(score, 80 - PixelFont.Measure(score), 28, _pal[Pal.Yellow]);
+        // Player panels: P1 left of the scanner; in 2-player games P2 right of it (original layout).
+        DrawPlayerPanel(s, 0, attract, left: true);
+        if (s.PlayerCount == 2 && !attract)
+        {
+            DrawPlayerPanel(s, 1, attract, left: false);
+        }
+        else
+        {
+            Text("HIGH", 232, 10, _pal[Pal.Grey]);
+            Text(s.HighScore.ToString(), 232, 19, _pal[Pal.White]);
+            if (!attract) Text($"WAVE {s.Wave}", 232, 29, _pal[Pal.Grey]);
+        }
+        if (s.Mode == GameMode.Modern && !(s.PlayerCount == 2 && !attract))
+            Text(GameSpeed < 1 ? $"M {GameSpeed:0.##}X" : "MODERN", 270 - (GameSpeed < 1 ? 6 : 0), 29, _pal[Pal.Green]);
+    }
 
-        // Right panel: high score / wave / mode.
-        Text("HIGH", 232, 10, _pal[Pal.Grey]);
-        Text(s.HighScore.ToString(), 232, 19, _pal[Pal.White]);
-        if (!attract) Text($"WAVE {s.Wave}", 232, 29, _pal[Pal.Grey]);
-        if (s.Mode == GameMode.Modern) Text(GameSpeed < 1 ? $"M {GameSpeed:0.##}X" : "MODERN", 270 - (GameSpeed < 1 ? 6 : 0), 29, _pal[Pal.Green]);
+    private void DrawPlayerPanel(FrameSnapshot s, int p, bool attract, bool left)
+    {
+        int lives = s.PlayerLives[p], bombs = s.PlayerBombs[p], score = s.PlayerScores[p];
+        int x0 = left ? 18 : 232, bombX = left ? 84 : 290, scoreRight = left ? 80 : 286;
+        for (int i = 0; i < Math.Min(lives, 5); i++) DrawSprite(Sprites.ShipIcon, x0 + i * 12, 10);
+        for (int i = 0; i < Math.Min(bombs, 3); i++) DrawSprite(Sprites.BombIcon, bombX, 16 + i * 5);
+        string text = score > 0 || !attract ? score.ToString() : "";
+        // The player whose turn it is gets the bright score colour.
+        uint c = s.PlayerCount == 1 || p == s.CurrentPlayer ? _pal[Pal.Yellow] : _pal[Pal.Grey];
+        Text(text, scoreRight - PixelFont.Measure(text), 28, c);
     }
 
     private void DrawWaveComplete(FrameSnapshot s)
@@ -234,7 +249,7 @@ public sealed class SoftwareRenderer
             DrawTable("TODAYS", "GREATEST", book?.Today.Entries, 8, CropX + 14);
             DrawTable("ALL TIME", "GREATEST", book?.AllTime.Entries, 10, CropX + 156);
         }
-        if ((t / 30) % 2 == 0) CenterText("PRESS 1 OR F2 TO START", 214, _pal[Pal.Yellow]);
+        if ((t / 30) % 2 == 0) CenterText("PRESS 1 OR 2 PLAYER START", 214, _pal[Pal.Yellow]);
         if (ShowControlHints) CenterText("F1 CONTROLS   F10 SETTINGS   F11 FULLSCREEN", 230, g);
         if (StatusLine is { } st) Text(st.Length > 48 ? st[..48] : st, CropX + 2, Arcade.ScannerBottom + 4, _pal[Pal.Grey]);
     }
@@ -256,7 +271,7 @@ public sealed class SoftwareRenderer
     private void DrawInitials(FrameSnapshot s)
     {
         uint w = _pal[Pal.White];
-        CenterText("PLAYER ONE", 60, _pal[Pal.Yellow]);
+        CenterText(s.InitialsPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO", 60, _pal[Pal.Yellow]);
         CenterText("YOU HAVE QUALIFIED FOR", 80, w);
         CenterText("THE HALL OF FAME", 92, w);
         CenterText("SCORE " + s.Score, 110, _pal[Pal.Laser]);

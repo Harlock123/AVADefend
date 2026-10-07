@@ -16,7 +16,8 @@ public static class ControlsHelp
             ("Fire (one shot per press)", LogicalButton.Fire, LogicalButton.Fire),
             ("Smart Bomb", LogicalButton.SmartBomb, LogicalButton.SmartBomb),
             ("Hyperspace (~25% risk!)", LogicalButton.Hyperspace, LogicalButton.Hyperspace),
-            ("Start game", LogicalButton.Start, LogicalButton.Start),
+            ("Start 1-player game", LogicalButton.Start, LogicalButton.Start),
+            ("Start 2-player game", LogicalButton.Start2, LogicalButton.Start2),
             ("Pause", LogicalButton.Pause, LogicalButton.Pause),
         };
         var sb = new System.Text.StringBuilder("CONTROLS                       (F1 to close)\n\n");

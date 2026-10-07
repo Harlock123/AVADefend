@@ -89,6 +89,7 @@ public sealed unsafe class SdlGamepad : IDisposable
         levels.Hyperspace |= Any(LogicalButton.Hyperspace);
         levels.Pause |= Any(LogicalButton.Pause);
         levels.Start |= Any(LogicalButton.Start);
+        levels.Start2 |= Any(LogicalButton.Start2);
         if (bindings.PadStickSteering && levels.FaceRequest == 0)
         {
             // Stick/D-pad horizontal = "face this way and thrust" (documented in CONTROLS.md).
@@ -114,6 +115,8 @@ public sealed unsafe class SdlGamepad : IDisposable
             PadControl.RightTrigger => Axis(GameControllerAxis.Triggerright) > 0.4f,
             PadControl.Back => Btn(GameControllerButton.Back),
             PadControl.Start => Btn(GameControllerButton.Start),
+            PadControl.LeftStickPress => Btn(GameControllerButton.Leftstick),
+            PadControl.RightStickPress => Btn(GameControllerButton.Rightstick),
             PadControl.DpadUp => Btn(GameControllerButton.DpadUp),
             PadControl.DpadDown => Btn(GameControllerButton.DpadDown),
             PadControl.DpadLeft => Btn(GameControllerButton.DpadLeft),

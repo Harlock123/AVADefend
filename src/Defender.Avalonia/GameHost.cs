@@ -140,7 +140,7 @@ public sealed class GameHost : IDisposable
             Thrust = Held(LogicalButton.Thrust), Reverse = Held(LogicalButton.Reverse),
             Up = Held(LogicalButton.Up), Down = Held(LogicalButton.Down), Fire = Held(LogicalButton.Fire),
             SmartBomb = Held(LogicalButton.SmartBomb), Hyperspace = Held(LogicalButton.Hyperspace),
-            Pause = Held(LogicalButton.Pause), Start = Held(LogicalButton.Start),
+            Pause = Held(LogicalButton.Pause), Start = Held(LogicalButton.Start), Start2 = Held(LogicalButton.Start2),
         };
         Gamepad?.Poll(b, ref levels);
         _edges.Sample(levels);

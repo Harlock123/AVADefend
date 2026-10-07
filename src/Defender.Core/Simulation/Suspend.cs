@@ -33,6 +33,9 @@ public sealed class SuspendData
     public List<Popup> Popups { get; set; } = new();
     public List<Particle> Particles { get; set; } = new();
     public List<Star> Stars { get; set; } = new();
+    public int PlayerCount { get; set; } = 1;
+    public int CurrentPlayer { get; set; }
+    public PlayerState? WaitingPlayer { get; set; }
 }
 
 public sealed partial class GameSession
@@ -57,6 +60,7 @@ public sealed partial class GameSession
             Player = Clone(Player), Enemies = Enemies.Select(Clone).ToList(), Humanoids = Humanoids.Select(Clone).ToList(),
             Shells = Shells.Select(Clone).ToList(), Lasers = Lasers.Select(Clone).ToList(), Popups = Popups.Select(Clone).ToList(),
             Particles = Particles.Select(Clone).ToList(), Stars = Stars.Select(Clone).ToList(),
+            PlayerCount = PlayerCount, CurrentPlayer = CurrentPlayer, WaitingPlayer = WaitingPlayer,
         };
     }
 
@@ -66,6 +70,8 @@ public sealed partial class GameSession
         if (d.Params.Length != Enum.GetValues<WaveVar>().Length || d.Reserves.Length != 5 || d.Counters.Length != 12
             || d.Humanoids.Count != Arcade.HumanoidCount || d.Palette.Length != 16 || d.Stars.Count == 0
             || d.Wave < 1 || d.Lives < 0 || d.SmartBombs < 0 || d.Score < 0
+            || d.PlayerCount is < 1 or > 2 || d.CurrentPlayer < 0 || d.CurrentPlayer >= d.PlayerCount
+            || (d.WaitingPlayer is { } w && (w.Humanoids.Count != Arcade.HumanoidCount || w.Params.Length != d.Params.Length || w.Reserves.Length != 5))
             || d.State is not (SessionState.Playing or SessionState.LifeStart or SessionState.WaveComplete))
             throw new InvalidDataException("Suspend data is inconsistent");
         var s = new GameSession(d.Rules, policy, new XorShiftRandom(1), terrain: new Terrain(d.TerrainSeed), highScores: highScores);
@@ -87,6 +93,8 @@ public sealed partial class GameSession
         s.Shells.AddRange(d.Shells.Select(Clone)); s.Lasers.AddRange(d.Lasers.Select(Clone));
         s.Popups.AddRange(d.Popups.Select(Clone)); s.Particles.AddRange(d.Particles.Select(Clone));
         s.Stars.Clear(); s.Stars.AddRange(d.Stars.Select(Clone));
+        s.PlayerCount = d.PlayerCount; s.CurrentPlayer = d.CurrentPlayer;
+        if (d.PlayerCount == 2) s._slots[1 - d.CurrentPlayer] = d.WaitingPlayer;
         s.Paused = s.State is SessionState.Playing or SessionState.LifeStart;
         return s;
     }

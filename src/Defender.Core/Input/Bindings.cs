@@ -1,12 +1,13 @@
 namespace Defender.Core.Input;
 
-public enum LogicalButton { Thrust, Reverse, Up, Down, Fire, SmartBomb, Hyperspace, Pause, Start }
+public enum LogicalButton { Thrust, Reverse, Up, Down, Fire, SmartBomb, Hyperspace, Pause, Start, Start2 }
 
 /// <summary>Physical gamepad controls (SDL GameController layout names; A = bottom face button).</summary>
 public enum PadControl
 {
     A, B, X, Y, LeftShoulder, RightShoulder, LeftTrigger, RightTrigger, Back, Start,
     DpadUp, DpadDown, DpadLeft, DpadRight, LeftStickUp, LeftStickDown, LeftStickLeft, LeftStickRight,
+    LeftStickPress, RightStickPress,
 }
 
 /// <summary>
@@ -33,6 +34,7 @@ public sealed class InputBindings
             [LogicalButton.Hyperspace] = ["Enter", "L"],
             [LogicalButton.Pause] = ["Escape", "P"],
             [LogicalButton.Start] = ["D1", "F2"],
+            [LogicalButton.Start2] = ["D2", "F3"],
         },
         Gamepad = new()
         {
@@ -45,6 +47,7 @@ public sealed class InputBindings
             [LogicalButton.Hyperspace] = [PadControl.Y, PadControl.RightShoulder],
             [LogicalButton.Pause] = [PadControl.Start],
             [LogicalButton.Start] = [PadControl.Back],
+            [LogicalButton.Start2] = [PadControl.RightStickPress],
         },
     };
 

@@ -111,7 +111,8 @@ public sealed partial class GameSession
         switch (State)
         {
             case SessionState.Attract:
-                if (input.StartPressed) StartGame();
+                if (input.StartPressed) StartGame(1);
+                else if (input.Start2Pressed) StartGame(2);
                 break;
             case SessionState.LifeStart:
                 StepWorldIdle();
@@ -150,16 +151,15 @@ public sealed partial class GameSession
         PlanetActive = true;
     }
 
-    public void StartGame()
+    public void StartGame(int players = 1)
     {
-        Score = 0;
-        NextReplay = Rules.ReplayEvery > 0 ? Rules.ReplayEvery : int.MaxValue;
-        Lives = Rules.Ships;          // decremented as the first ship launches (net: ships-1 in reserve)
-        SmartBombs = Rules.Ships;     // P1SBC = NSHIP (defa7.src:1142-1147)
-        Wave = 1;
-        PlanetActive = true;
-        PlaceHumanoids(Arcade.HumanoidCount);
-        LoadWave();
+        PlayerCount = Math.Clamp(players, 1, 2);
+        CurrentPlayer = 0;
+        _slots[0] = _slots[1] = null;
+        _initialsQueue.Clear();
+        // Ships are consumed as each player launches (net: ships-1 in reserve); bombs = ships (defa7.src:1142-1147).
+        if (PlayerCount == 2) _slots[1] = FreshPlayer();
+        FreshPlayer();
         _sounds.Add(SoundId.GameStart);
         StartLife(consumeShip: true);
     }
@@ -225,8 +225,7 @@ public sealed partial class GameSession
         UpdateParticles();
         if (StateTimer < DeathTotalFrames) return;
         SaveEnemiesToReserves();
-        if (Lives > 0) StartLife(consumeShip: true);
-        else EnterGameOver();
+        NextTurnAfterDeath();
     }
 
     /// <summary>PLSAV (INF): enemies still alive go back into the reserves and re-enter on the next life.</summary>
@@ -265,14 +264,18 @@ public sealed partial class GameSession
 
     private void AfterGameOver()
     {
-        if (HighScores.Qualifies(Score))
-        {
-            State = SessionState.EnterInitials;
-            StateTimer = 0;
-            InitialsCursor = 0;
-            Initials[0] = Initials[1] = Initials[2] = 'A';
-        }
-        else EnterAttract();
+        QueueInitials();
+        NextInitialsOrAttract();
+    }
+
+    private void NextInitialsOrAttract()
+    {
+        if (_initialsQueue.Count == 0) { EnterAttract(); return; }
+        InitialsPlayer = _initialsQueue.Peek().Player;
+        State = SessionState.EnterInitials;
+        StateTimer = 0;
+        InitialsCursor = 0;
+        Initials[0] = Initials[1] = Initials[2] = 'A';
     }
 
     private const string InitialsAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ .-";
@@ -286,7 +289,7 @@ public sealed partial class GameSession
             Initials[InitialsCursor] = InitialsAlphabet[i];
         }
         if (input.FirePressed || input.StartPressed) AdvanceInitial();
-        if (StateTimer > 60 * 60) CommitInitials(); // abandon after a minute
+        if (StateTimer > 60 * 60) CommitInitials(); // commit whatever is entered after a minute
     }
 
     /// <summary>Lets the UI type initials directly (keyboard) as an alternative to the joystick.</summary>
@@ -306,11 +309,14 @@ public sealed partial class GameSession
 
     private void CommitInitials()
     {
-        var (allRank, todayRank) = HighScores.Insert(new string(Initials), Score, Wave);
+        var who = _initialsQueue.Count > 0 ? _initialsQueue.Dequeue() : new PendingInitials(CurrentPlayer, Score, Wave);
+        var (allRank, todayRank) = HighScores.Insert(new string(Initials), who.Score, who.Wave);
         PendingRank = allRank;
         if (allRank >= 0) HighScoreCommitted?.Invoke(HighScores.AllTime.Entries[allRank]);
         else if (todayRank >= 0) HighScoreCommitted?.Invoke(HighScores.Today.Entries[todayRank]);
-        EnterAttract();
+        // A later player may no longer qualify once an earlier entry has been inserted.
+        while (_initialsQueue.Count > 0 && !HighScores.Qualifies(_initialsQueue.Peek().Score)) _initialsQueue.Dequeue();
+        NextInitialsOrAttract();
     }
 
     // ----- wave completion ---------------------------------------------------------------------
