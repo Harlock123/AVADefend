@@ -78,6 +78,39 @@ public class HostTests : IDisposable
         Assert.True(h.Session.Frame > f);
     }
 
+    [Theory]
+    [InlineData("{\"schemaVersion\":2,\"entries\":null}")]
+    [InlineData("{\"schemaVersion\":2,\"entries\":[null,{\"initials\":null,\"score\":500,\"wave\":1}],\"today\":null}")]
+    public void MalformedHighScoreFile_DoesNotCrash(string json)
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(Path.Combine(_dir, "highscores-classic.json"), json);
+        var h = NewHost();
+        Assert.Equal(SessionState.Attract, h.Session.State);
+        Assert.All(h.Session.HighScores.AllTime.Entries, e => Assert.Equal(3, e.Initials.Length));
+    }
+
+    [Theory]
+    [InlineData("\"player\":null")]
+    [InlineData("\"enemies\":[null]")]
+    [InlineData("\"enemies\":[{\"kind\":\"Lander\",\"target\":99}]")]
+    [InlineData("\"rules\":{\"ships\":0}")]
+    public void MalformedSuspendFile_IsIgnored_NotACrash(string fragment)
+    {
+        var a = NewHost(h => { h.Settings.Mode = GameMode.Modern; h.ApplySettings(); h.SaveSettings(); });
+        PlayABit(a);
+        a.SuspendIfPlaying();
+        var path = Path.Combine(_dir, "suspend-1.json");
+        var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+        var patch = System.Text.Json.Nodes.JsonNode.Parse("{" + fragment + "}")!.AsObject();
+        foreach (var (k, v) in patch.ToList()) { patch.Remove(k); json["data"]![k] = v; }
+        File.WriteAllText(path, json.ToJsonString());
+        var b = NewHost();                                   // must not throw
+        Assert.Equal(SessionState.Attract, b.Session.State);
+        Assert.Contains(b.Messages, m => m.Contains("Suspend file ignored"));
+        Assert.False(File.Exists(path));
+    }
+
     [AvaloniaFact]
     public void HintBar_ShownOnlyInModern()
     {

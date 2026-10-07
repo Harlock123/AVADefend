@@ -36,10 +36,10 @@ public sealed class HighScoreTable
         return new string(chars).PadRight(3);
     }
 
-    public void LoadFrom(IEnumerable<HighScoreEntry> entries)
+    public void LoadFrom(IEnumerable<HighScoreEntry?>? entries)
     {
         _entries.Clear();
-        foreach (var e in entries.Where(e => e.Score > 0).OrderByDescending(e => e.Score).Take(Capacity))
+        foreach (var e in (entries ?? []).OfType<HighScoreEntry>().Where(e => e.Score > 0).OrderByDescending(e => e.Score).Take(Capacity))
             _entries.Add(e with { Initials = NormalizeInitials(e.Initials) });
     }
 }

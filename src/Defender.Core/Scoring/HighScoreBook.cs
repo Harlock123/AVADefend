@@ -46,7 +46,7 @@ public sealed class HighScoreBook
         return (AllTime.Insert(e), Today.Insert(e));
     }
 
-    public void Load(IEnumerable<HighScoreEntry> allTime, IEnumerable<HighScoreEntry> today, DateOnly? todayDate)
+    public void Load(IEnumerable<HighScoreEntry?>? allTime, IEnumerable<HighScoreEntry?>? today, DateOnly? todayDate)
     {
         AllTime.LoadFrom(allTime);
         Today.LoadFrom(todayDate == TodayDate ? today : []);

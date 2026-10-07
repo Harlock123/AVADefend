@@ -56,7 +56,7 @@ public sealed class GameHost : IDisposable
         var loaded = _hsStore.Load();
         if (loaded.Message is { } m) Messages.Add(m);
         var book = new HighScoreBook();
-        book.Load(loaded.Value.Entries, loaded.Value.Today ?? new(), loaded.Value.ParsedTodayDate);
+        book.Load(loaded.Value.Entries, loaded.Value.Today, loaded.Value.ParsedTodayDate);
         var s = new GameSession(policy: PolicyFor(Settings), highScores: book);
         s.HighScoreCommitted += _ => SaveHighScores();
         return s;
@@ -104,7 +104,7 @@ public sealed class GameHost : IDisposable
                 Messages.Add("RESUMED SUSPENDED GAME");
             }
         }
-        catch (InvalidDataException ex) { Messages.Add("Suspend file ignored: " + ex.Message); }
+        catch (Exception ex) { Messages.Add("Suspend file ignored: " + ex.Message); } // untrusted input: never crash
         finally { try { store.Delete(); } catch (IOException) { } }
     }
 

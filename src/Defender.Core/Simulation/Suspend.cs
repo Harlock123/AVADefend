@@ -69,6 +69,10 @@ public sealed partial class GameSession
     /// <summary>Builds a paused session from suspend data. Throws <see cref="InvalidDataException"/> if inconsistent.</summary>
     public static GameSession Restore(SuspendData d, GamePolicy policy, Scoring.HighScoreBook? highScores = null)
     {
+        Validate(d);
+        GameRules rules;
+        try { rules = d.Rules.Validated(); }
+        catch (ArgumentOutOfRangeException ex) { throw new InvalidDataException("Suspend data has invalid rules: " + ex.ParamName); }
         if (d.Params.Length != Enum.GetValues<WaveVar>().Length || d.Reserves.Length != 5 || d.Counters.Length != 12
             || d.Humanoids.Count != Arcade.HumanoidCount || d.Palette.Length != 16 || d.Stars.Count == 0
             || d.Wave < 1 || d.Lives < 0 || d.SmartBombs < 0 || d.Score < 0
@@ -76,7 +80,7 @@ public sealed partial class GameSession
             || (d.WaitingPlayer is { } w && (w.Humanoids.Count != Arcade.HumanoidCount || w.Params.Length != d.Params.Length || w.Reserves.Length != 5))
             || d.State is not (SessionState.Playing or SessionState.LifeStart or SessionState.WaveComplete))
             throw new InvalidDataException("Suspend data is inconsistent");
-        var s = new GameSession(d.Rules, policy, new XorShiftRandom(1), terrain: new Terrain(d.TerrainSeed), highScores: highScores);
+        var s = new GameSession(rules, policy, new XorShiftRandom(1), terrain: new Terrain(d.TerrainSeed), highScores: highScores);
         s.Rng.State = d.RngState;
         s.Frame = d.Frame; s.State = d.State; s.StateTimer = d.StateTimer;
         s.Score = d.Score; s.NextReplay = d.NextReplay; s.Lives = d.Lives; s.SmartBombs = d.SmartBombs; s.Wave = d.Wave;
@@ -99,6 +103,24 @@ public sealed partial class GameSession
         if (d.PlayerCount == 2) s._slots[1 - d.CurrentPlayer] = d.WaitingPlayer;
         s.Paused = s.State is SessionState.Playing or SessionState.LifeStart;
         return s;
+    }
+
+    /// <summary>Structural checks so hand-edited or damaged files are rejected instead of crashing later.</summary>
+    private static void Validate(SuspendData? d)
+    {
+        static void Need(bool ok, string what) { if (!ok) throw new InvalidDataException("Suspend data is missing or invalid: " + what); }
+        Need(d is not null, "data");
+        Need(d!.Rules is not null && d.Player is not null, "rules/player");
+        Need(d.Params is not null && d.Reserves is not null && d.Counters is not null && d.Palette is not null, "arrays");
+        Need(d.Enemies is not null && d.Humanoids is not null && d.Shells is not null && d.Lasers is not null
+             && d.Popups is not null && d.Particles is not null && d.Stars is not null, "lists");
+        Need(d.Enemies.All(e => e is not null) && d.Humanoids.All(h => h is not null) && d.Shells.All(x => x is not null)
+             && d.Lasers.All(x => x is not null) && d.Popups.All(x => x is not null && x.Text is not null)
+             && d.Particles.All(x => x is not null) && d.Stars.All(x => x is not null), "null entries");
+        Need(d.Enemies.All(e => e.Target >= -1 && e.Target < Arcade.HumanoidCount && Enum.IsDefined(e.Kind) && Enum.IsDefined(e.Phase)), "enemy targets");
+        Need(d.Humanoids.All(h => Enum.IsDefined(h.State)), "humanoid states");
+        Need(d.WaitingPlayer is null || (d.WaitingPlayer.Humanoids is not null && d.WaitingPlayer.Params is not null
+             && d.WaitingPlayer.Reserves is not null && d.WaitingPlayer.Humanoids.All(h => h is not null)), "waiting player");
     }
 
     // Shallow member-wise copies (all entity members are value types or strings).
