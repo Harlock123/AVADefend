@@ -34,7 +34,7 @@ public sealed class GameHost : IDisposable
         Gamepad = enableGamepad ? new SdlGamepad() : null;
         Scheduler = new FixedStepScheduler(Arcade.TicksPerSecond);
         Session = CreateSession();
-        Attract = new AttractDirector(() => Session.Policy, new XorShiftRandom((uint)Environment.TickCount | 1));
+        Attract = new AttractDirector();
         ApplySettings();
         if (Settings.Mode == GameMode.Modern) TryResume();
     }
@@ -190,9 +190,11 @@ public sealed class GameHost : IDisposable
         }
         Audio.SetLooping(SoundId.Thrust, Session.ThrustSoundOn && !Session.Paused);
         bool demo = Session.State == SessionState.Attract && Attract.Phase == AttractPhase.Demo && Attract.Demo is not null;
-        (demo ? Attract.Demo! : Session).BuildSnapshot(Snapshot);
+        Session.BuildSnapshot(Snapshot);
+        if (demo) Attract.Demo!.Build(Snapshot, Session.Terrain);
         Snapshot.Demo = demo;
         Snapshot.AttractPhase = Attract.Phase;
+        Snapshot.AttractTimer = Attract.PhaseTimer;
         Snapshot.HighScore = Math.Max(Session.HighScores.Best, Math.Max(Session.ScoreOf(0), Session.ScoreOf(1)));
     }
 

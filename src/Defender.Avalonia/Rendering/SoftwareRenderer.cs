@@ -38,11 +38,11 @@ public sealed class SoftwareRenderer
 
         switch (s.State)
         {
-            case SessionState.Attract: DrawAttract(s); DrawHud(s, attract: true); return;
+            case SessionState.Attract when !s.Demo: DrawAttract(s); DrawHud(s, attract: true); return;
             case var _ when s.Demo:
-                DrawPlayfield(s); DrawHud(s, false);
-                CenterText("DEMONSTRATION", 60, _pal[Pal.White]);
-                if ((s.StateTimer / 30) % 2 == 0) CenterText("PRESS 1 OR F2 TO START", 214, _pal[Pal.Yellow]);
+                DrawPlayfield(s); DrawHud(s, true);
+                foreach (var l in s.Labels) Text(l.Text, l.X, l.Y, _pal[l.Color]);
+                DrawStartHint(s);
                 return;
             case SessionState.GameOver:
                 DrawPlayfield(s); DrawHud(s, false);
@@ -69,7 +69,7 @@ public sealed class SoftwareRenderer
     private void HLine(int x0, int x1, int y, uint c) { for (int x = x0; x <= x1; x++) Plot(x, y, c); }
     private void VLine(int x, int y0, int y1, uint c) { for (int y = y0; y <= y1; y++) Plot(x, y, c); }
 
-    private void DrawSprite(Sprite spr, int gx, int gy, int appear = 0, uint? mono = null)
+    private void DrawSprite(Sprite spr, int gx, int gy, int appear = 0, uint? mono = null, uint? tintC = null)
     {
         int cx = spr.Width / 2, cy = spr.Height / 2;
         for (int y = 0; y < spr.Height; y++)
@@ -77,7 +77,7 @@ public sealed class SoftwareRenderer
             {
                 byte p = spr.Pixels[y * spr.Width + x];
                 if (p == Sprite.Transparent) continue;
-                uint c = mono ?? _pal[p];
+                uint c = mono ?? (p == Pal.CycleC && tintC is { } tc ? tc : _pal[p]);
                 if (appear > 0)
                 {
                     // Materialise: pixels converge onto the sprite from a spread-out cloud.
@@ -245,57 +245,119 @@ public sealed class SoftwareRenderer
 
     // ----- attract / initials ----------------------------------------------------------------------------
 
-    private void DrawAttract(FrameSnapshot s)
-    {
-        uint w = _pal[Pal.White], g = _pal[Pal.Grey];
-        int t = s.StateTimer;
-        CenterText(Branding.Title, 52, _pal[Pal.Laser], 3);
-        CenterText(Branding.Disclaimer, 78, g);
+    /// <summary>Our own 120×24 title graphic (letters colour $C, drop shadow colour 2) built from our font.</summary>
+    private static readonly Sprite TitleSprite = BuildTitle(Branding.Title);
+    private static readonly Sprite[] TitleStrips = Enumerable.Range(0, 15).Select(i => Slice(TitleSprite, i * 8, 8)).ToArray();
 
-        if (s.AttractPhase == AttractPhase.Title)
+    private static Sprite BuildTitle(string text)
+    {
+        var grid = new char[24, 120];
+        for (int y = 0; y < 24; y++) for (int x = 0; x < 120; x++) grid[y, x] = '.';
+        int w = text.Length * 12 - 2, x0 = (120 - w) / 2, y0 = 4;
+        void Put(int dx, int dy, char c)
         {
-            // Scoring legend.
-            CenterText("SCORING", 96, w);
-            var rows = new (Sprite spr, string name, string pts)[]
-            {
-                (Sprites.Lander[(t / 12) % 3], "LANDER", "150"), (Sprites.Mutant, "MUTANT", "150"),
-                (Sprites.Baiter, "BAITER", "200"), (Sprites.Bomber, "BOMBER", "250"),
-                (Sprites.Pod, "POD", "1000"), (Sprites.Swarmer, "SWARMER", "150"),
-            };
-            for (int i = 0; i < rows.Length; i++)
-            {
-                int y = 110 + i * 14;
-                DrawSprite(rows[i].spr, 92, y);
-                Text(rows[i].name, 112, y + 1, g);
-                Text(rows[i].pts, 200 - PixelFont.Measure(rows[i].pts), y + 1, w);
-            }
-            DrawSprite(Sprites.Humanoid, 94, 196);
-            Text("HUMANOID CATCH 500  LAND 500", 112, 197, g);
+            for (int i = 0; i < text.Length; i++)
+                if (PixelFont.Glyphs.TryGetValue(text[i], out var rows))
+                    for (int r = 0; r < 7; r++) for (int col = 0; col < 5; col++)
+                        if ((rows[r] >> (4 - col) & 1) != 0)
+                            for (int sy = 0; sy < 2; sy++) for (int sx = 0; sx < 2; sx++)
+                            {
+                                int x = x0 + i * 12 + col * 2 + sx + dx, y = y0 + r * 2 + sy + dy;
+                                if (x is >= 0 and < 120 && y is >= 0 and < 24) grid[y, x] = c;
+                            }
         }
-        else
-        {
-            CenterText("HALL OF FAME", 92, w);
-            var book = HighScoreProvider?.Invoke();
-            DrawTable("TODAYS", "GREATEST", book?.Today.Entries, 8, CropX + 14);
-            DrawTable("ALL TIME", "GREATEST", book?.AllTime.Entries, 10, CropX + 156);
-        }
-        if ((t / 30) % 2 == 0) CenterText("PRESS 1 OR 2 PLAYER START", 214, _pal[Pal.Yellow]);
-        if (ShowControlHints) CenterText("F1 CONTROLS   F10 SETTINGS   F11 FULLSCREEN", 230, g);
-        if (StatusLine is { } st) Text(st.Length > 48 ? st[..48] : st, CropX + 2, Arcade.ScannerBottom + 4, _pal[Pal.Grey]);
+        Put(2, 2, '2');   // shadow
+        Put(0, 0, 'C');   // letters
+        return new Sprite("title", Enumerable.Range(0, 24).Select(y => new string(Enumerable.Range(0, 120).Select(x => grid[y, x]).ToArray())).ToArray());
     }
 
-    /// <summary>One column of the hall of fame (the arcade showed Today's and All-Time side by side).</summary>
-    private void DrawTable(string title1, string title2, IReadOnlyList<Core.Scoring.HighScoreEntry>? entries, int rows, int gx)
+    private static Sprite Slice(Sprite src, int x0, int width) =>
+        new("title-strip", Enumerable.Range(0, src.Height).Select(y => new string(Enumerable.Range(x0, width)
+            .Select(x => src.Pixels[y * src.Width + x] is var p && p == Sprite.Transparent ? '.' : "0123456789ABCDEF"[p]).ToArray())).ToArray());
+
+    private void DrawAttract(FrameSnapshot s)
     {
-        uint w = _pal[Pal.White], g = _pal[Pal.Grey];
-        Text(title1, gx + (122 - PixelFont.Measure(title1)) / 2, 106, _pal[Pal.Yellow]);
-        Text(title2, gx + (122 - PixelFont.Measure(title2)) / 2, 115, _pal[Pal.Yellow]);
+        if (s.AttractPhase == AttractPhase.HallOfFame) DrawHallOfFame(s);
+        else DrawLogoPage(s);
+        DrawStartHint(s);
+    }
+
+    private void DrawStartHint(FrameSnapshot s)
+    {
+        // Not on the arcade (it had coin slots); shown as an aid unless control hints are off.
+        if (!ShowControlHints) return;
+        // One line at the very bottom so it never collides with the hall-of-fame rows.
+        uint c = (s.AttractTimer / 30) % 2 == 0 ? _pal[Pal.Yellow] : _pal[Pal.Grey];
+        CenterText("1/2 PLAYERS START   F1 HELP   F10 SETUP", 238, c);
+    }
+
+    /// <summary>AMODES (amode1.src:715-893) as behaviour: credit text traced out, "PRESENTS", title assembling from
+    /// 15 converging strips after 48 frames, stamped 46 frames later, letters cycling 40 frames after that, then
+    /// our notice in place of the copyright line.</summary>
+    private void DrawLogoPage(FrameSnapshot s)
+    {
+        int t = s.AttractTimer;
+        const string credit = "FAN RECREATION";
+        int shown = Math.Min(credit.Length, t * credit.Length / 225 + 1);
+        Text(credit[..shown], 100, 88, _pal[Pal.CycleC]);
+        if (t < 225) return;
+        Text("PRESENTS", 124, 108, _pal[Pal.CycleC]);
+        int u = t - 225 - 48;
+        if (u < 0) return;
+        uint? letters = u < 46 + 40 ? _pal[Pal.Yellow] : null;   // then $C cycles
+        if (u < 47)
+        {
+            for (int i = 0; i < TitleStrips.Length; i++)
+            {
+                int top = (96 + 8 * i) >> 1;
+                DrawBlastTinted(new BlastDraw(TitleStrips[i], top, 152, top + 2, 152 + 12, 46 - u), letters);
+            }
+        }
+        if (u >= 46) DrawSprite(TitleSprite, 96, 144, 0, null, letters);
+        if (u >= 46 + 40 + 60) Text(Branding.Disclaimer, 118 - 30, 208, _pal[Pal.Grey]);
+    }
+
+    /// <summary>HALDIS (amode1.src:378-475) layout.</summary>
+    private void DrawHallOfFame(FrameSnapshot s)
+    {
+        uint c1 = s.Mode == GameMode.Modern ? _pal[Pal.White] : _pal[Pal.Laser];   // colour 1 cycles on the arcade
+        DrawSprite(TitleSprite, 96, 56 - 4, 0, _pal[Pal.Yellow]);
+        Text("HALL OF FAME", 112, 84, c1);
+        Text("TODAYS", 68, 104, c1); Text("ALL TIME", 192, 104, c1);
+        Text("GREATEST", 60, 114, c1); Text("GREATEST", 190, 114, c1);
+        for (int x = 60; x <= 123; x++) { Plot(x, 123, c1); Plot(x, 124, c1); }
+        for (int x = 190; x <= 251; x++) { Plot(x, 123, c1); Plot(x, 124, c1); }
+        var book = HighScoreProvider?.Invoke();
+        HallColumn(book?.Today.Entries, 8, 48, c1);
+        HallColumn(book?.AllTime.Entries, s.Mode == GameMode.Modern ? 10 : 8, 178, c1);
+    }
+
+    private void HallColumn(IReadOnlyList<Core.Scoring.HighScoreEntry>? entries, int rows, int x, uint c)
+    {
         for (int i = 0; i < rows; i++)
         {
+            int y = 134 + i * 10;
             var e = entries is not null && i < entries.Count ? entries[i] : null;
-            string line = e is null ? $"{i + 1,2}  ---       " : $"{i + 1,2} {e.Initials} {e.Score,7}";
-            Text(line, gx, 128 + i * 9, e is null ? g : (i == 0 ? _pal[Pal.Yellow] : w));
+            Text(((i + 1) % 10).ToString(), x, y, c);
+            if (e is null) continue;
+            Text(e.Initials, x + 10, y, c);
+            Text(e.Score.ToString().PadLeft(6), x + 38, y, c);
         }
+    }
+
+    private void DrawBlastTinted(BlastDraw b, uint? tint)
+    {
+        var spr = b.Sprite;
+        int xoff = b.CenterCol - b.TopCol, dy = b.CenterRow - b.TopRow, yoff = dy >> 1, flavor = dy & 1;
+        for (int py = 0; py < spr.Height; py++)
+            for (int px = 0; px < spr.Width; px++)
+            {
+                byte c = spr.Pixels[py * spr.Width + px];
+                if (c == Sprite.Transparent) continue;
+                int col = b.CenterCol + ((px >> 1) - xoff) * b.S, row = b.CenterRow - flavor + ((py >> 1) - yoff) * 2 * b.S;
+                if (col < 0 || col > 0x98 || row < Arcade.YMin || row > 255) continue;
+                Plot(col * 2 + (px & 1), row + (py & 1), c == Pal.CycleC && tint is { } t ? t : _pal[c]);
+            }
     }
 
     private void DrawInitials(FrameSnapshot s)

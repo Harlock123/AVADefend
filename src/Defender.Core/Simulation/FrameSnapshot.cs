@@ -18,6 +18,7 @@ public sealed class FrameSnapshot
     public int StateTimer;
     public bool Paused;
     public AttractPhase AttractPhase;
+    public int AttractTimer;
     public bool Demo;
     public GameMode Mode;
     public int Score, Lives, SmartBombs, Wave, HighScore;
@@ -34,6 +35,7 @@ public sealed class FrameSnapshot
     public readonly List<PointDraw> Stars = new();
     public readonly List<PointDraw> Particles = new();   // PLEX pieces (2×2, colour $B)
     public readonly List<BlastDraw> Blasts = new();
+    public readonly List<TextDraw> Labels = new();   // attract-demo labels
     public readonly List<TextDraw> Popups = new();
     public readonly List<ScannerBlip> Scanner = new();
     public readonly List<PointDraw> ScannerTerrain = new();

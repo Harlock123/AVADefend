@@ -1,33 +1,22 @@
-using Defender.Core.Scoring;
-
 namespace Defender.Core.Simulation;
 
 public enum AttractPhase { Title, Demo, HallOfFame }
 
 /// <summary>
-/// Attract-mode cycle: title + scoring legend → demonstration flight → hall of fame → repeat.
-/// The demo is a separate, silent <see cref="GameSession"/> flown by <see cref="Autopilot"/> with a
-/// throwaway score book, so it can never affect real scores or settings. The original's attract
-/// sequence was not studied in detail; this cycle is a reconstruction (FIDELITY.md).
+/// Attract cycle in the original order (amode1.src): logo/title page (AMODES, ~960 frames) → Hall of Fame
+/// (HALDIS, 600) → scripted instructions demo (LEDRET, ~2279) → logo page … Starts on the logo page, as at power-on.
+/// Coin-skip and the "start only after the first logo page" lock are not reproduced (free play).
 /// </summary>
 public sealed class AttractDirector
 {
-    public const int TitleFrames = 600, DemoMaxFrames = 1500, HallFrames = 600, DemoEndAfterDeathFrames = 150;
+    public const int TitleFrames = 960, HallFrames = 600;
 
-    private readonly Func<GamePolicy> _policy;
-    private readonly IRandom _seeds;
-    private Autopilot _pilot = new();
-    private int _deathFrames;
-
-    public AttractDirector(Func<GamePolicy> policy, IRandom seeds)
-    {
-        _policy = policy;
-        _seeds = seeds;
-    }
+    // Kept for API compatibility with earlier callers; the demo is no longer an autopilot game.
+    public AttractDirector(Func<GamePolicy>? policy = null, IRandom? seeds = null) { }
 
     public AttractPhase Phase { get; private set; } = AttractPhase.Title;
     public int PhaseTimer { get; private set; }
-    public GameSession? Demo { get; private set; }
+    public AttractDemo? Demo { get; private set; }
 
     public void Reset()
     {
@@ -42,13 +31,15 @@ public sealed class AttractDirector
         switch (Phase)
         {
             case AttractPhase.Title when PhaseTimer >= TitleFrames:
-                StartDemo();
-                break;
-            case AttractPhase.Demo:
-                StepDemo();
+                Enter(AttractPhase.HallOfFame);
                 break;
             case AttractPhase.HallOfFame when PhaseTimer >= HallFrames:
-                Enter(AttractPhase.Title);
+                Enter(AttractPhase.Demo);
+                Demo = new AttractDemo();
+                break;
+            case AttractPhase.Demo:
+                Demo!.Step();
+                if (Demo.Finished) Enter(AttractPhase.Title);
                 break;
         }
     }
@@ -58,24 +49,5 @@ public sealed class AttractDirector
         Phase = p;
         PhaseTimer = 0;
         if (p != AttractPhase.Demo) Demo = null;
-    }
-
-    private void StartDemo()
-    {
-        Enter(AttractPhase.Demo);
-        Demo = new GameSession(policy: _policy() with { AllowPause = false }, rng: new XorShiftRandom((uint)_seeds.Next(int.MaxValue) + 1),
-                               highScores: new HighScoreBook());
-        Demo.StartGame();
-        _pilot = new Autopilot();
-        _deathFrames = 0;
-    }
-
-    private void StepDemo()
-    {
-        var d = Demo!;
-        d.Step(_pilot.Next(d));
-        if (d.State is SessionState.Dying or SessionState.GameOver) _deathFrames++;
-        if (PhaseTimer >= DemoMaxFrames || _deathFrames >= DemoEndAfterDeathFrames || d.State is SessionState.EnterInitials or SessionState.Attract)
-            Enter(AttractPhase.HallOfFame);
     }
 }
