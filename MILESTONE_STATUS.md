@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 95 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 112 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -79,7 +79,7 @@ Updated 2026-10-07.
 | Auto-pause on focus loss | Impl |
 | Integer scaling and bilinear option | Impl |
 | Borderless fullscreen (F11) | Impl, not observed |
-| Gamepad rebinding UI | Deferred: keyboard only for now |
+| Gamepad rebinding UI | Impl; swap logic Tested; **Untested** with a real controller |
 
 ## M9 — Validation, packaging, docs: partial
 
@@ -91,10 +91,19 @@ Updated 2026-10-07.
 | macOS | Not built |
 | Fidelity validation against MAME footage | Not done |
 
+## Round 2 additions (2026-10-07)
+
+| Feature | Status |
+|---|---|
+| Original two-table high scores (Today's 8 with daily rollover, All-Time 10), file schema v1→v2 migration | Impl, Tested, Observed |
+| Attract cycle with silent demonstration flight | Impl, Tested, Observed |
+| Gamepad rebinding UI; swap-safe rebinding for keyboard and gamepad | Impl; logic Tested; no hardware test |
+| 2-player alternating play (2 / F3 to start) | Impl, Tested; 2P HUD observed in a headless render |
+| CI workflow for Windows, Linux, macOS | Written and YAML-validated; **never run** (not pushed) |
+
 ## Next concrete tasks
 
 1. Run the win-x64 build on Windows: smoke test, audio, gamepad.
 2. Compare against MAME recordings: lander timing, the baiter's first appearance, the reverse slide.
-3. Attract-mode demo flight, and the original two-table high-score presentation as an option.
-4. A gamepad rebinding UI.
-5. CI: GitHub Actions running `dotnet test` on windows-latest, ubuntu-latest and macos-latest.
+3. Push to GitHub so the CI workflow (`.github/workflows/ci.yml`, written but never run) builds and tests on Windows, Linux and macOS.
+4. Test with a real gamepad: hot-plug, deadzone, rebinding.

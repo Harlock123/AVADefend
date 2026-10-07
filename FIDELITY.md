@@ -26,7 +26,7 @@ Classic and Modern run the **same engine, wave tables, physics and scoring**. Ev
 | Scaling | Nearest-neighbour | Nearest-neighbour or optional bilinear (M) |
 | Pause | Allowed. Pause does not alter rules or timing, but the cabinet had no pause (M, disclosed) | Allowed; also auto-pauses when the window loses focus (M) |
 | Suspend / resume | None. High scores only, as on the arcade | One suspend slot, written on close mid-game and **consumed on resume** (M) |
-| High scores | Own top-10 table (R: the arcade had two tables of 8) | Separate top-10 table |
+| High scores | Today's (8, resets daily) + All-Time (10; R: the arcade's was 8) | Separate tables of the same shape |
 
 ## Fidelity matrix
 
@@ -73,5 +73,6 @@ Columns:
 | Flicker | No evidence of sprite flicker in the Red Label code; the star count drops when the CPU is overloaded (V) | No artificial flicker added | Modern suppresses rapid colour cycling | — | none |
 | Sound | Williams 6808 + DAC board; about 30 commands; thrust on/off; no speech (V) | **Synthesised** original approximations (no samples); priority mixer | Same | `AudioTests` | Timbre is approximate by design (R) |
 | RNG | 3-byte LFSR with a mix step (V) | xorshift32, injectable and serialisable | Same | `Replay_IsDeterministic_*` | Not byte-exact with MAME (R) |
-| Attract mode | Logo, scoring legend, high scores, demo flight | Title, scoring legend, Hall of Fame. No demo flight (the `--autoplay` flag is a diagnostic) | Same | visual | Demo flight deferred |
-| High scores | 2 tables × 8 entries, initials entered with Up/Down and Fire (V) | 1 top-10 table per preset; Up/Down and Fire, or type the initials | Same | `HighScoreTableTests`, `LosingAllShips_*` | Count differs (per the brief) |
+| Attract mode | Logo, scoring legend, high scores, demo flight (V: existence; sequence not studied) | Cycle: title + scoring legend (10 s) → silent demonstration flown by the autopilot in an isolated session (≤ 25 s) → hall of fame (10 s) | Same | `AttractTests` | Sequence and demo behaviour are reconstructions (R) |
+| High scores | 2 tables × 8 ("Todays Greatest", reset daily; "All Time Greatest"); initials with Up/Down and Fire (V) | Today's 8 + All-Time 10 per preset, shown side by side; Up/Down and Fire, or type the initials; daily rollover from an injectable clock | Same | `HighScoreBookTests`, `LosingAllShips_*` | All-Time holds 10, not 8 (per the brief) |
+| Two players | Alternating turns on death; per-player save area for score, ships, bombs, wave, reserves and humanoids/planet (V, PLSAV/PLRES); P1 score left of the scanner, P2 right (V) | Waiting player's state stored as `PlayerState`; a player out of ships drops out; each qualifying player enters initials in turn | Same | `TwoPlayerTests` | The "PLAYER n GAME OVER" interstitial is not shown (R) |

@@ -13,13 +13,15 @@
 | File | Contents | Written |
 |---|---|---|
 | `settings.json` | Preset (Classic or Modern), volumes, mute, display options, accessibility options, key and gamepad bindings, deadzone | When Settings closes, and when the app exits |
-| `highscores-classic.json` | Classic top 10: initials, score, wave, UTC date | When initials are committed |
-| `highscores-modern.json` | Modern top 10 | When initials are committed |
+| `highscores-classic.json` | Classic tables: All-Time top 10 and Today's top 8 (with its local date). Each entry has initials, score, wave and a UTC date | When initials are committed |
+| `highscores-modern.json` | Modern tables, same shape | When initials are committed |
 | `suspend-1.json` | **Modern only.** The complete simulation state, including RNG state, terrain seed, every entity and every counter | When the window closes during a game |
 
 ### High scores
 
 The two presets keep separate tables, so Modern conveniences such as hold-to-fire and slower speed never post scores to the Classic table.
+
+Today's table is cleared when the local date changes, whether that is noticed at load or mid-session.
 
 ### Suspend
 
@@ -45,7 +47,7 @@ A crash during a save leaves the old file intact.
 |---|---|
 | File missing | Defaults are used silently |
 | File corrupt (bad JSON, empty, unreadable) | Moved aside as `<name>.bad-<yyyyMMddHHmmss>`. Defaults are used, and a message appears on the title-screen status line and in Settings. Nothing is deleted. |
-| `schemaVersion` older than the current version | Passed to a migrator (`JsonStore` `migrate` callback) and upgraded. Every file is currently at v1, so no migrators exist yet. |
+| `schemaVersion` older than the current version | Passed to a migrator (`JsonStore` `migrate` callback) and upgraded. High-score files are at **v2**: the v1→v2 migrator keeps the All-Time entries and starts an empty Today table (tested in `HighScoreBookTests.V1File_MigratesToV2`). All other files are at v1. |
 | `schemaVersion` newer than the current version | Treated as incompatible: quarantined like a corrupt file, and defaults are used |
 
 Values are also checked after loading:

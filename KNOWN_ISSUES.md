@@ -27,14 +27,14 @@ The list of open questions is in RESEARCH.md. Briefly:
 - Whether walking humanoids can be shot is unknown. Ours cannot.
 - The terrain profile is deliberately not the arcade's (it is generated under the same constraints).
 - The sprite shapes and colour tables are original approximations, not the arcade's.
-- High scores: we keep one top-10 table per preset. The original had two tables of 8 ("Today's" and "All-time"), and "Today's" resets daily.
+- High scores: like the original we keep "Today's" (8, reset daily) and "All-Time" tables, but All-Time holds 10 rather than 8, as the brief asked.
 
 ## Deferred and missing
 
-- **Attract-mode demo flight.** Not implemented. `--autoplay` is a diagnostic flag, not the arcade demo.
-- **2-player alternating play.** Not implemented. The arcade supported it.
+- **Attract-mode demo flight.** Implemented, but as a reconstruction: our autopilot flies it, and the original's demo sequence was not studied.
+- **2-player play.** Implemented without the original's "PLAYER n GAME OVER" interstitial; gamepad Start2 defaults to pressing the right stick, which is awkward.
 - **Cocktail flip.** Not implemented.
-- **Gamepad rebinding UI.** Gamepad bindings can be edited in `settings.json`, but the in-game UI only rebinds the keyboard.
+- **Gamepad rebinding UI.** Implemented, but untested on hardware (no controller available). The swap logic is unit-tested.
 - **Suspend slots.** Only one suspend slot is exposed. The storage layer supports slots 1–3.
 - **Classic crash-recovery save.** Not implemented. The brief allows it but does not require it.
 - **Sound design.** The sounds are synthesised from scratch and only loosely evoke the Williams board. An extended thrust loop and the distinct "lightning" during the planet explosion are approximate.

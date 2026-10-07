@@ -39,7 +39,7 @@ It has two presets, **Classic** and **Modern**. Both use the same rules. Modern 
 
 ```bash
 dotnet build Defender.slnx                      # Debug build of all projects
-dotnet test Defender.slnx                       # 95 tests (engine, persistence, audio mixer, headless Avalonia UI)
+dotnet test Defender.slnx                       # 112 tests (engine, persistence, audio mixer, headless Avalonia UI)
 dotnet run --project src/Defender.Avalonia      # play
 ```
 
@@ -54,7 +54,8 @@ In the game:
 
 | Key | Action |
 |---|---|
-| **1** or **F2** | Start a game |
+| **1** or **F2** | Start a 1-player game |
+| **2** or **F3** | Start a 2-player game (players alternate on death) |
 | **F1** | Show the controls |
 | **F10** | Settings and key remapping |
 | **F11** | Fullscreen |
@@ -73,6 +74,10 @@ dotnet publish src/Defender.Avalonia -c Release -r osx-arm64 --self-contained fa
 ```
 
 The executable is called `Defender` (`Defender.exe` on Windows).
+
+## Continuous integration
+
+`.github/workflows/ci.yml` builds and tests on Windows, Linux and macOS, then publishes artifacts. It has been written and checked as valid YAML, but it has **not run yet**: it runs once the repository is pushed to GitHub.
 
 ## Repository map
 

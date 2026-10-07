@@ -20,7 +20,8 @@ No standard keyboard or gamepad layout matches this exactly. The defaults below 
 | Fire | Left Ctrl, Left Alt, J | One shot per press. Modern mode has an optional hold-to-fire setting. |
 | Smart Bomb | Left Shift, K | |
 | Hyperspace | Enter, L | Risky: about a 25% chance of dying on arrival, as on the arcade. |
-| Start game | 1, F2 | |
+| Start 1-player game | 1, F2 | |
+| Start 2-player game | 2, F3 | Players alternate on each death |
 | Pause | Esc, P | |
 | Controls overlay | F1 | |
 | Settings / remap | F10 | |
@@ -44,7 +45,8 @@ No standard keyboard or gamepad layout matches this exactly. The defaults below 
 | Smart Bomb | B, Left trigger |
 | Hyperspace | Y, Right bumper |
 | Pause | Start |
-| Start game | Back / View |
+| Start 1-player game | Back / View |
+| Start 2-player game | Right stick press (rebindable) |
 
 ### Mapping rationale
 
@@ -59,7 +61,7 @@ To play "pure arcade", turn off stick steering in Settings and use the trigger a
 
 - **Deadzone:** 0.2 by default; adjustable in Settings.
 - **Hot-plug:** controllers can be connected or disconnected at any time.
-- **Rebinding:** gamepad bindings are stored in `settings.json` (`bindings.gamepad`) and can be edited there. The in-game rebinding UI currently covers the keyboard only (see KNOWN_ISSUES.md).
+- **Rebinding:** in Settings (F10), under **Gamepad bindings**, click an action, then press a control on the pad. This needs a connected controller and has not been tested on real hardware (see KNOWN_ISSUES.md). Bindings are also stored in `settings.json` (`bindings.gamepad`).
 
 ## Remapping the keyboard
 
@@ -67,7 +69,7 @@ To play "pure arcade", turn off stick steering in Settings and use the trigger a
 2. Click an action, then press the new key.
    - Backspace restores that action's defaults.
    - Esc cancels.
-3. Assigning a key removes it from any other action, so one key never drives two actions.
+3. Assigning a key removes it from any other action, so one key never drives two actions. If that leaves the other action with no key at all, it receives this action's old key (a swap).
 4. **Reset all bindings to defaults** restores every keyboard binding.
 
 Bindings are saved when Settings closes.
