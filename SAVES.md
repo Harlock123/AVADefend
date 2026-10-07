@@ -15,7 +15,7 @@
 | `settings.json` | Preset (Classic or Modern), volumes, mute, display options, accessibility options, key and gamepad bindings, deadzone | When Settings closes, and when the app exits |
 | `highscores-classic.json` | Classic tables: All-Time top 10 and Today's top 8 (with its local date). Each entry has initials, score, wave and a UTC date | When initials are committed |
 | `highscores-modern.json` | Modern tables, same shape | When initials are committed |
-| `suspend-1.json` … `suspend-3.json` | **Modern only.** One file per slot (selected in Settings). The complete simulation state, including RNG state, terrain seed, every entity and every counter | When the window closes during a game |
+| `suspend-1.json` … `suspend-3.json` | **Modern only.** One file per slot (selected in Settings). Written when closing during play, a life start, the bonus screen, a death sequence or a 2-player turn-over. The complete simulation state, including RNG state, terrain seed, every entity and every counter | When the window closes during a game |
 
 ### High scores
 
@@ -29,6 +29,7 @@ Today's table is cleared when the local date changes, whether that is noticed at
 - Settings lists each slot's contents (wave, score, time saved). Reading a slot to describe it does not consume it.
 - Because the file is consumed, it cannot be reloaded repeatedly as a save state.
 - Classic mode never writes a suspend file, matching the arcade, where only high scores persist.
+- Closing the window during initials entry (either preset) commits the entry: confirmed letters are kept and the rest become `-`.
 
 ## Format
 
@@ -47,7 +48,8 @@ A crash during a save leaves the old file intact.
 | Situation | What happens |
 |---|---|
 | File missing | Defaults are used silently |
-| File corrupt (bad JSON, empty, unreadable) | Moved aside as `<name>.bad-<yyyyMMddHHmmss>`. Defaults are used, and a message appears on the title-screen status line and in Settings. Nothing is deleted. |
+| File unreadable (locked by another program, no permission) | Retried briefly. If still unreadable, the file is **left untouched**, defaults are used for this session, a message is shown, and the game **refuses to save over it** until restarted. |
+| File corrupt (bad JSON, empty) | Moved aside as `<name>.bad-<yyyyMMddHHmmss>`. Defaults are used, and a message appears on the title-screen status line and in Settings. Nothing is deleted. |
 | `schemaVersion` older than the current version | Passed to a migrator (`JsonStore` `migrate` callback) and upgraded. High-score files are at **v2**: the v1→v2 migrator keeps the All-Time entries and starts an empty Today table (tested in `HighScoreBookTests.V1File_MigratesToV2`). All other files are at v1. |
 | `schemaVersion` newer than the current version | Treated as incompatible: quarantined like a corrupt file, and defaults are used |
 
@@ -56,7 +58,8 @@ Values are also checked after loading:
 - **Settings** are clamped: volumes 0–1, game speed 0.5–1.0, deadzone 0.05–0.9.
 - **Bindings** with missing or empty actions fall back to the default for that action.
 - **High-score entries** with a score ≤ 0 are dropped, and initials are normalised.
-- **Suspend data** is checked for consistency (array sizes, value ranges, allowed states). Inconsistent data is ignored with a message.
+- **High-score files** with `null` lists or entries load as empty or partial tables instead of failing.
+- **Suspend data** is checked for structure and consistency (nulls, array sizes, value ranges, target indices, rules, allowed states). Anything inconsistent is ignored with a message; a damaged suspend file can never stop the game from starting.
 
 ## Versioning strategy
 

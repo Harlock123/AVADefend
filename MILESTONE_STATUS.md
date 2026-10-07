@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 143 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 157 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -131,6 +131,22 @@ A line-by-line comparison against the original routines found 18 discrepancies. 
 | Laser collision probe matches LCOL (16×1, direction-dependent placement) | Impl, Tested |
 | Application icon (window + Windows .exe) from our own sprite; generator script in `tools/` | Impl; window icon load Tested |
 | Modern bold scanner blips | Impl |
+
+## Round 7: independent correctness review
+
+A fresh read-only review found 8 defects plus 3 minor ones; all are fixed with regression tests.
+
+| Defect | Severity | Fix |
+|---|---|---|
+| Toggling thrust while muted leaked mixer voices; the 17th press crashed the app (reproduced) | High | Voices advance while muted; fading loops are revived; allocation can't throw; the frame loop reports rather than crashes on any exception |
+| Gamepad kept driving the game behind the Settings panel; settings/focus-loss didn't pause non-playing states | Medium-high | Host freeze (any state) while Settings is open or Modern focus is lost; presses made meanwhile are discarded |
+| Malformed but valid JSON (null lists or entries, bad target index, bad rules) crashed startup | Medium | Null-tolerant high-score loading; structural validation of suspend data; catch-all at the resume boundary |
+| OS key-repeat filled the initials | Medium-low | Repeats are ignored |
+| 2-player initials screen showed the wrong player's score | Low-medium | Shows the score being entered |
+| Planet-explosion effect leaked into the next life or turn | Low | Reset at each life |
+| A temporarily unreadable save file was quarantined, then overwritten with defaults | Low | Left untouched and write-protected for the session |
+| Closing during a death, a turn-over or initials lost the game or the entry | Low | Suspend covers death and turn-over; initials are committed on close |
+| F1 help stale after rebinding; speed combo misread; Backspace-reset could double-bind | Minor | Fixed |
 
 ## Next concrete tasks
 
