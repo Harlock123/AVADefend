@@ -19,11 +19,13 @@ public sealed class GameHost : IDisposable
     private readonly HashSet<string> _heldKeys = new();
     private readonly Storage _storage;
     private JsonStore<HighScoreFile> _hsStore = null!;
+    private readonly JsonStore<GameSettings> _settingsStore;
 
     public GameHost(string? dataDir = null, ISoundEngine? audio = null, bool enableGamepad = true)
     {
         _storage = new Storage(dataDir ?? AppPaths.DefaultDataDirectory());
-        var settings = _storage.Settings().Load();
+        _settingsStore = _storage.Settings();
+        var settings = _settingsStore.Load();
         Settings = settings.Value.Sanitized();
         if (settings.Message is { } m) Messages.Add(m);
 
@@ -119,7 +121,7 @@ public sealed class GameHost : IDisposable
 
     public void SaveSettings()
     {
-        try { _storage.Settings().Save(Settings); }
+        try { _settingsStore.Save(Settings); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Messages.Add("Could not save settings: " + ex.Message); }
     }
 

@@ -132,6 +132,26 @@ public class PersistenceTests : IDisposable
         Assert.Equal(LoadStatus.IncompatibleVersion, s.Load().Status);
     }
 
+    [Fact]
+    public void UnreadableFile_IsLeftUntouched_AndNeverOverwritten()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "needs POSIX permissions as a normal user");
+        Directory.CreateDirectory(_dir);
+        var s = Store();
+        s.Save(new Doc { Name = "precious" });
+        File.SetUnixFileMode(s.FilePath, UnixFileMode.None);
+        try
+        {
+            var fresh = Store();
+            var r = fresh.Load();
+            Assert.Equal(LoadStatus.Unreadable, r.Status);
+            Assert.True(File.Exists(fresh.FilePath));                       // not quarantined
+            Assert.Throws<IOException>(() => fresh.Save(new Doc()));        // not overwritten with defaults
+        }
+        finally { File.SetUnixFileMode(s.FilePath, UnixFileMode.UserRead | UnixFileMode.UserWrite); }
+        Assert.Equal("precious", Store().Load().Value.Name);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_dir)) Directory.Delete(_dir, true);
