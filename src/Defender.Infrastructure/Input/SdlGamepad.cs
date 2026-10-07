@@ -76,29 +76,8 @@ public sealed unsafe class SdlGamepad : IDisposable
         if (_pad == null) return;
 
         float dz = bindings.PadDeadzone;
-        float lx = Axis(GameControllerAxis.Leftx), ly = Axis(GameControllerAxis.Lefty);
-        bool Pressed(PadControl c) => c switch
-        {
-            PadControl.A => Btn(GameControllerButton.A),
-            PadControl.B => Btn(GameControllerButton.B),
-            PadControl.X => Btn(GameControllerButton.X),
-            PadControl.Y => Btn(GameControllerButton.Y),
-            PadControl.LeftShoulder => Btn(GameControllerButton.Leftshoulder),
-            PadControl.RightShoulder => Btn(GameControllerButton.Rightshoulder),
-            PadControl.LeftTrigger => Axis(GameControllerAxis.Triggerleft) > 0.4f,
-            PadControl.RightTrigger => Axis(GameControllerAxis.Triggerright) > 0.4f,
-            PadControl.Back => Btn(GameControllerButton.Back),
-            PadControl.Start => Btn(GameControllerButton.Start),
-            PadControl.DpadUp => Btn(GameControllerButton.DpadUp),
-            PadControl.DpadDown => Btn(GameControllerButton.DpadDown),
-            PadControl.DpadLeft => Btn(GameControllerButton.DpadLeft),
-            PadControl.DpadRight => Btn(GameControllerButton.DpadRight),
-            PadControl.LeftStickUp => ly < -dz,
-            PadControl.LeftStickDown => ly > dz,
-            PadControl.LeftStickLeft => lx < -dz,
-            PadControl.LeftStickRight => lx > dz,
-            _ => false,
-        };
+        float lx = Axis(GameControllerAxis.Leftx);
+        bool Pressed(PadControl c) => IsPressed(c, dz);
         bool Any(LogicalButton b) => bindings.Gamepad.TryGetValue(b, out var list) && list.Any(Pressed);
 
         levels.Thrust |= Any(LogicalButton.Thrust);
@@ -117,6 +96,39 @@ public sealed unsafe class SdlGamepad : IDisposable
             else if (lx > 0.5f || Btn(GameControllerButton.DpadRight)) levels.FaceRequest = 1;
         }
     }
+
+    /// <summary>State of one physical control (sticks/triggers thresholded by the deadzone).</summary>
+    public bool IsPressed(PadControl c, float deadzone)
+    {
+        if (_pad == null) return false;
+        float lx = Axis(GameControllerAxis.Leftx), ly = Axis(GameControllerAxis.Lefty);
+        return c switch
+        {
+            PadControl.A => Btn(GameControllerButton.A),
+            PadControl.B => Btn(GameControllerButton.B),
+            PadControl.X => Btn(GameControllerButton.X),
+            PadControl.Y => Btn(GameControllerButton.Y),
+            PadControl.LeftShoulder => Btn(GameControllerButton.Leftshoulder),
+            PadControl.RightShoulder => Btn(GameControllerButton.Rightshoulder),
+            PadControl.LeftTrigger => Axis(GameControllerAxis.Triggerleft) > 0.4f,
+            PadControl.RightTrigger => Axis(GameControllerAxis.Triggerright) > 0.4f,
+            PadControl.Back => Btn(GameControllerButton.Back),
+            PadControl.Start => Btn(GameControllerButton.Start),
+            PadControl.DpadUp => Btn(GameControllerButton.DpadUp),
+            PadControl.DpadDown => Btn(GameControllerButton.DpadDown),
+            PadControl.DpadLeft => Btn(GameControllerButton.DpadLeft),
+            PadControl.DpadRight => Btn(GameControllerButton.DpadRight),
+            PadControl.LeftStickUp => ly < -deadzone,
+            PadControl.LeftStickDown => ly > deadzone,
+            PadControl.LeftStickLeft => lx < -deadzone,
+            PadControl.LeftStickRight => lx > deadzone,
+            _ => false,
+        };
+    }
+
+    /// <summary>All controls currently held (used by the rebinding UI).</summary>
+    public IReadOnlyList<PadControl> PressedControls(float deadzone = 0.5f) =>
+        Enum.GetValues<PadControl>().Where(c => IsPressed(c, deadzone)).ToList();
 
     private bool Btn(GameControllerButton b) => _sdl!.GameControllerGetButton(_pad, b) != 0;
     private float Axis(GameControllerAxis a) => _sdl!.GameControllerGetAxis(_pad, a) / 32767f;

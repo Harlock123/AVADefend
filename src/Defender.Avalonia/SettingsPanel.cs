@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Defender.Core;
 using Defender.Core.Input;
 
@@ -15,6 +16,9 @@ public sealed class SettingsPanel : Border
     private readonly Action _close;
     private readonly StackPanel _root = new() { Spacing = 6 };
     private LogicalButton? _capturing;
+    private LogicalButton? _capturingPad;
+    private HashSet<PadControl> _padHeldAtStart = new();
+    private readonly DispatcherTimer _padTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
     private TextBlock? _captureHint;
 
     public SettingsPanel(GameHost host, Action close)
@@ -30,6 +34,7 @@ public sealed class SettingsPanel : Border
         VerticalAlignment = VerticalAlignment.Stretch;
         MaxWidth = 720;
         Child = new ScrollViewer { Content = _root };
+        _padTimer.Tick += (_, _) => PollPadCapture();
     }
 
     public void Refresh()
@@ -37,6 +42,7 @@ public sealed class SettingsPanel : Border
         var s = _host.Settings;
         _root.Children.Clear();
         _capturing = null;
+        StopPadCapture();
         Header("SETTINGS  (Esc / F10 to close)");
 
         Header("Preset");
@@ -82,6 +88,16 @@ public sealed class SettingsPanel : Border
             btn.Click += (_, _) => { _capturing = lb; _captureHint.Text = $"Press a key for {lb} (Esc cancels)…"; };
             Labeled(b.ToString(), btn);
         }
+        Header("Gamepad bindings (click, then press a pad control; Esc cancels)");
+        if (_host.Gamepad?.Connected != true) Note("Connect a controller to rebind it.");
+        foreach (var b in Enum.GetValues<LogicalButton>())
+        {
+            var btn = new Button { Content = string.Join(" / ", s.Bindings.Gamepad[b]), MinWidth = 260, IsEnabled = _host.Gamepad?.Connected == true };
+            var lb = b;
+            btn.Click += (_, _) => StartPadCapture(lb);
+            Labeled(b.ToString(), btn);
+        }
+
         var reset = new Button { Content = "Reset all bindings to defaults" };
         reset.Click += (_, _) => { s.Bindings = InputBindings.CreateDefault(); Refresh(); };
         _root.Children.Add(reset);
@@ -101,13 +117,55 @@ public sealed class SettingsPanel : Border
             if (key == "Back") s.Bindings.Keyboard[b] = InputBindings.CreateDefault().Keyboard[b];
             else
             {
-                foreach (var list in s.Bindings.Keyboard.Values) list.Remove(key); // a key drives one action
-                s.Bindings.Keyboard[b] = [key, .. s.Bindings.Keyboard[b].Take(1)];
+                InputBindings.Rebind(s.Bindings.Keyboard, b, key); // a key drives exactly one action
             }
             s.Bindings = s.Bindings.Sanitized();
         }
         _capturing = null;
         Refresh();
+        return true;
+    }
+
+    private void StartPadCapture(LogicalButton b)
+    {
+        _capturingPad = b;
+        // Ignore controls already held (e.g. A used to click) until they are released.
+        _padHeldAtStart = _host.Gamepad?.PressedControls().ToHashSet() ?? new();
+        if (_captureHint is not null) _captureHint.Text = $"Press a gamepad control for {b} (Esc cancels)…";
+        _padTimer.Start();
+    }
+
+    private void StopPadCapture()
+    {
+        _capturingPad = null;
+        _padTimer.Stop();
+    }
+
+    private void PollPadCapture()
+    {
+        if (_capturingPad is not { } b || _host.Gamepad is not { Connected: true } pad) { StopPadCapture(); return; }
+        var held = pad.PressedControls();
+        _padHeldAtStart.IntersectWith(held);
+        var fresh = held.FirstOrDefault(c => !_padHeldAtStart.Contains(c), (PadControl)(-1));
+        if ((int)fresh < 0) return;
+        ApplyPadBinding(_host.Settings.Bindings, b, fresh);
+        StopPadCapture();
+        Refresh();
+    }
+
+    /// <summary>Makes <paramref name="control"/> the primary pad binding for <paramref name="b"/>, removing it elsewhere.</summary>
+    public static void ApplyPadBinding(InputBindings bindings, LogicalButton b, PadControl control)
+    {
+        InputBindings.Rebind(bindings.Gamepad, b, control);
+        bindings.Gamepad = bindings.Sanitized().Gamepad;
+    }
+
+    /// <summary>Esc while waiting for a pad control cancels the capture.</summary>
+    public bool TryCancelPadCapture()
+    {
+        if (_capturingPad is null) return false;
+        StopPadCapture();
+        if (_captureHint is not null) _captureHint.Text = "";
         return true;
     }
 

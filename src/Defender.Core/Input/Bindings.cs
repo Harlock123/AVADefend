@@ -63,6 +63,23 @@ public sealed class InputBindings
         return r;
     }
 
+    /// <summary>
+    /// Makes <paramref name="item"/> the primary binding of <paramref name="action"/> (keeping its old primary as
+    /// secondary) and removes it from every other action. An action that would be left with nothing receives
+    /// this action's old binding instead, so no control ever drives two actions and none is left unbound.
+    /// </summary>
+    public static void Rebind<T>(Dictionary<LogicalButton, List<T>> map, LogicalButton action, T item) where T : notnull
+    {
+        var previous = map.GetValueOrDefault(action, []).Where(x => !x.Equals(item)).ToList();
+        foreach (var (other, list) in map)
+        {
+            if (other == action || !list.Remove(item) || list.Count > 0 || previous.Count == 0) continue;
+            list.Add(previous[^1]);
+            previous.RemoveAt(previous.Count - 1);
+        }
+        map[action] = [item, .. previous.Take(1)];
+    }
+
     public LogicalButton? KeyboardLookup(string key)
     {
         foreach (var (b, keys) in Keyboard)

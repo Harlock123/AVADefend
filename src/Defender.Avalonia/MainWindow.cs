@@ -51,6 +51,7 @@ public sealed class MainWindow : Window
     {
         if (_settings.IsVisible)
         {
+            if (e.Key == Key.Escape && _settings.TryCancelPadCapture()) { e.Handled = true; return; }
             if (_settings.TryCaptureKey(KeyName(e.Key))) { e.Handled = true; return; }
             if (e.Key is Key.Escape or Key.F10) { CloseSettings(); e.Handled = true; }
             return;
