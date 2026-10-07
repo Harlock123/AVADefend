@@ -12,8 +12,11 @@ public class SuspendTests : IDisposable
     {
         var a = new GameSession(policy: GamePolicy.Modern, rng: new XorShiftRandom(77));
         var pilot = new Autopilot();
-        for (int i = 0; i < 60 * 40; i++) a.Step(pilot.Next(a));
-        Assert.True(a.CanSuspend, a.State.ToString());
+        for (int i = 0; i < 60 * 40 || !a.CanSuspend || a.State != SessionState.Playing; i++)
+        {
+            a.Step(pilot.Next(a));
+            Assert.True(i < 60 * 600, "never reached a suspendable state");
+        }
 
         var store = new Storage(_dir).Suspend(1);
         store.Save(new SuspendFile { SavedUtc = DateTime.UtcNow, Data = a.CaptureSuspend() });

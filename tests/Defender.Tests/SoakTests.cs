@@ -33,7 +33,7 @@ public class SoakTests
             sawGameOver |= s.State == SessionState.GameOver;
             Assert.InRange(s.Shells.Count, 0, Arcade.MaxShells);
             Assert.InRange(s.Lasers.Count, 0, Arcade.MaxLasers);
-            Assert.InRange(s.Player.PixelY, Arcade.PlayerMinY, Arcade.PlayerMaxY);
+            Assert.InRange(s.Player.PixelY, Arcade.PlayerMinY - 1, Arcade.PlayerMaxY + 1);
         }
         Assert.True(sawPlaying);
         Assert.True(sawGameOver, $"score {s.Score} wave {s.Wave} state {s.State}");

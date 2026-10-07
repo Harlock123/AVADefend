@@ -121,13 +121,14 @@ public class PlayerPhysicsTests
     }
 
     [Fact]
-    public void Vertical_IsClampedToPlayfield()
+    public void Vertical_IsGatedAtPlayfieldEdges()
     {
         var s = TestUtil.NewPlaying();
+        // Gated, not clamped (defa7.src:2442-2475): the last 2-px step can end at 42 or 239.
         s.Run(300, new PlayerInput { Vertical = -1 });
-        Assert.Equal(Arcade.PlayerMinY, s.Player.PixelY);
+        Assert.InRange(s.Player.PixelY, Arcade.PlayerMinY - 1, Arcade.PlayerMinY);
         s.Run(300, new PlayerInput { Vertical = 1 });
-        Assert.Equal(Arcade.PlayerMaxY, s.Player.PixelY);
+        Assert.InRange(s.Player.PixelY, Arcade.PlayerMaxY, Arcade.PlayerMaxY + 1);
     }
 
     [Fact]
@@ -209,5 +210,24 @@ public class LaserTests
         Assert.True(near.Dead);
         Assert.False(far.Dead);
         Assert.Equal(150, s.Score);
+    }
+}
+
+public class ScrollFidelityTests
+{
+    [Fact]
+    public void WhileAccelerating_LeadSnapsUncompensated_SoTheCameraScrollsTheFullVelocity()
+    {
+        var s = TestUtil.NewPlaying();
+        var input = new PlayerInput { ThrustHeld = true };
+        for (int i = 0; i < 120; i++)
+        {
+            int cam = s.CameraX, sx = s.Player.ScreenX128;
+            s.Step(input);
+            int moved = (short)(ushort)((s.CameraX - cam) & 0xFFFF);
+            int slide = s.Player.ScreenX128 - sx;
+            if (Math.Abs(slide) < 0x100) Assert.Equal(s.Player.V16, moved);          // snap: BGDELT = 0
+            else Assert.Equal(s.Player.V16 - Math.Sign(slide) * 0x40, moved);         // full slide: compensated
+        }
     }
 }

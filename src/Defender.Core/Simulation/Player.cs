@@ -110,16 +110,22 @@ public sealed partial class GameSession
         // Drag then thrust, on the 24-bit velocity (defa7.src:2343-2371): V -= V/64; V += ±3.
         p.V24 -= p.V16 * 4;
         if (input.ThrustHeld) p.V24 += p.Facing * Arcade.ThrustPerFrame;
-        p.V24 = Math.Clamp(p.V24, -Arcade.MaxPlayerSpeed16 << 8, Arcade.MaxPlayerSpeed16 << 8);
         int v16 = p.V16;
 
-        // Ship screen position: base column by facing plus a speed lead; slides ≤2 px/frame while the scroll
-        // compensates, so the ship's world velocity is unaffected by the slide (defa7.src:2373-2420).
+        // Ship screen position (PLAY1..PV10, defa7.src:2373-2425): base column by facing plus a lead of
+        // (V>>2)·128 when moving the way it faces. Within one column of the target the ship snaps there and the
+        // scroll is NOT compensated; further away it slides one column and the scroll compensates (BGDELT ±$40).
         int target = (p.Facing > 0 ? Arcade.ShipBaseRightPx : Arcade.ShipBaseLeftPx) * 128;
-        if (Math.Sign(v16) == p.Facing) target += v16 * 32;
-        int delta = Math.Clamp(target - p.ScreenX128, -Arcade.ShipSlidePerFrame128, Arcade.ShipSlidePerFrame128);
-        p.ScreenX128 += delta;
-        CameraX = WrapX(CameraX + v16 - delta / 4);
+        int lead = (v16 >> 2) * 128;
+        if ((lead >> 8 < 0) == (p.Facing < 0)) target += lead;   // sign test on the high byte, as the original
+        int diff = target - p.ScreenX128;
+        int bgDelta = 0;
+        if (diff > 0x100) { p.ScreenX128 += 0x100; bgDelta = 0x40; }
+        else if (diff <= -0x100) { p.ScreenX128 -= 0x100; bgDelta = -0x40; }
+        else p.ScreenX128 = target;
+        // The velocity clamp comes after the position mapping (PV11/PV12).
+        p.V24 = Math.Clamp(p.V24, -Arcade.MaxPlayerSpeed16 << 8, Arcade.MaxPlayerSpeed16 << 8);
+        CameraX = WrapX(CameraX + p.V16 - bgDelta);
 
         // Vertical: no inertia; 1 px/frame on the first frame, ramping by 8/256 to 2 px/frame (defa7.src:2442-2475).
         int dir = input.Vertical;
@@ -128,9 +134,9 @@ public sealed partial class GameSession
         {
             p.VyMag = p.VyMag == 0 ? Arcade.VerticalStartSpeed : Math.Min(p.VyMag + Arcade.VerticalAccel, Arcade.VerticalMaxSpeed);
             int py = p.PixelY;
+            // Movement is gated (Y > 43 to go up, Y < 238 to go down) but not clamped, so 42 and 239 are reachable.
             if (dir < 0 && py > Arcade.PlayerMinY) p.Y -= p.VyMag;
             if (dir > 0 && py < Arcade.PlayerMaxY) p.Y += p.VyMag;
-            p.Y = Math.Clamp(p.Y, Arcade.PlayerMinY << 8, Arcade.PlayerMaxY << 8);
         }
         p.Vy = dir * p.VyMag;
         p.LastVertical = dir;
