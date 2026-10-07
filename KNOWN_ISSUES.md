@@ -33,9 +33,8 @@ The list of open questions is in RESEARCH.md. Briefly:
 
 - **Attract-mode demo flight.** Implemented, but as a reconstruction: our autopilot flies it, and the original's demo sequence was not studied.
 - **2-player play.** Implemented without the original's "PLAYER n GAME OVER" interstitial; gamepad Start2 defaults to pressing the right stick, which is awkward.
-- **Cocktail flip.** Not implemented.
+- **Cocktail flip.** Implemented as a setting (rotates the picture 180° on player two's turns), but not seen on screen. The cocktail cabinet's control-panel switching is not modelled.
 - **Gamepad rebinding UI.** Implemented, but untested on hardware (no controller available). The swap logic is unit-tested.
-- **Suspend slots.** Only one suspend slot is exposed. The storage layer supports slots 1–3.
 - **Classic crash-recovery save.** Not implemented. The brief allows it but does not require it.
 - **Sound design.** The sounds are synthesised from scratch and only loosely evoke the Williams board. An extended thrust loop and the distinct "lightning" during the planet explosion are approximate.
 - **Diagnostics.** The original's diagnostics and audit screens are not implemented.

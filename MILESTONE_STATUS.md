@@ -5,7 +5,7 @@ Updated 2026-10-07.
 **Status labels**
 
 - **Impl**: implemented.
-- **Tested**: covered by automated tests (`dotnet test`; 112 tests passing).
+- **Tested**: covered by automated tests (`dotnet test`; 116 tests passing).
 - **Observed**: seen working in the running app on Linux arm64, via screenshots.
 - **Untested**: implemented but not exercised.
 - **Deferred**: not implemented.
@@ -100,6 +100,15 @@ Updated 2026-10-07.
 | Gamepad rebinding UI; swap-safe rebinding for keyboard and gamepad | Impl; logic Tested; no hardware test |
 | 2-player alternating play (2 / F3 to start) | Impl, Tested; 2P HUD observed in a headless render |
 | CI workflow for Windows, Linux, macOS | Written and YAML-validated; **never run** (not pushed) |
+
+## Round 3 additions
+
+| Feature | Status |
+|---|---|
+| Modern control-reminder bar below the picture (never over the game) | Impl, Tested (shown only in Modern) |
+| Cocktail flip: picture rotated 180° on player two's turns (setting, both presets) | Impl; not observed |
+| Three selectable suspend slots (Modern); slot descriptions in Settings; picking a full slot on the title screen resumes it | Impl, Tested |
+| Worst-case performance test: 45 enemies, 20 shells, firing | Tested: sim + snapshot + render average 0.045 ms, worst 0.73 ms per frame (Debug, this machine) |
 
 ## Next concrete tasks
 

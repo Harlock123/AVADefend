@@ -15,7 +15,7 @@
 | `settings.json` | Preset (Classic or Modern), volumes, mute, display options, accessibility options, key and gamepad bindings, deadzone | When Settings closes, and when the app exits |
 | `highscores-classic.json` | Classic tables: All-Time top 10 and Today's top 8 (with its local date). Each entry has initials, score, wave and a UTC date | When initials are committed |
 | `highscores-modern.json` | Modern tables, same shape | When initials are committed |
-| `suspend-1.json` | **Modern only.** The complete simulation state, including RNG state, terrain seed, every entity and every counter | When the window closes during a game |
+| `suspend-1.json` … `suspend-3.json` | **Modern only.** One file per slot (selected in Settings). The complete simulation state, including RNG state, terrain seed, every entity and every counter | When the window closes during a game |
 
 ### High scores
 
@@ -25,7 +25,8 @@ Today's table is cleared when the local date changes, whether that is noticed at
 
 ### Suspend
 
-- The suspend file is read and **deleted** on the next launch in Modern mode. The game then resumes paused.
+- The selected slot is read and **deleted** on the next launch in Modern mode, or when you pick a full slot in Settings while on the title screen. The game then resumes paused.
+- Settings lists each slot's contents (wave, score, time saved). Reading a slot to describe it does not consume it.
 - Because the file is consumed, it cannot be reloaded repeatedly as a save state.
 - Classic mode never writes a suspend file, matching the arcade, where only high scores persist.
 

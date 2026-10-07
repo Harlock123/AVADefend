@@ -24,8 +24,9 @@ Classic and Modern run the **same engine, wave tables, physics and scoring**. Ev
 | Flashes / colour cycling | As the original (V/I) | Optional suppression: no background flashes, and colour cycling slowed to 1/4–1/5 speed (M) |
 | Game speed | 100% | 50–100%, an accessibility option. Shown on the HUD as `M 0.7X` (M) |
 | Scaling | Nearest-neighbour | Nearest-neighbour or optional bilinear (M) |
+| Control reminder | None (title-screen hints only) | Optional one-line reminder bar below the picture (M) |
 | Pause | Allowed. Pause does not alter rules or timing, but the cabinet had no pause (M, disclosed) | Allowed; also auto-pauses when the window loses focus (M) |
-| Suspend / resume | None. High scores only, as on the arcade | One suspend slot, written on close mid-game and **consumed on resume** (M) |
+| Suspend / resume | None. High scores only, as on the arcade | Three selectable slots; written on close mid-game and **consumed on resume** (M) |
 | High scores | Today's (8, resets daily) + All-Time (10; R: the arcade's was 8) | Separate tables of the same shape |
 
 ## Fidelity matrix
