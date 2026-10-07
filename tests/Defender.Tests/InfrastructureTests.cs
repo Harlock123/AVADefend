@@ -136,6 +136,7 @@ public class PersistenceTests : IDisposable
     public void UnreadableFile_IsLeftUntouched_AndNeverOverwritten()
     {
         Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "needs POSIX permissions as a normal user");
+        if (OperatingSystem.IsWindows()) return; // (unreachable: skipped above; satisfies the platform analyzer)
         Directory.CreateDirectory(_dir);
         var s = Store();
         s.Save(new Doc { Name = "precious" });

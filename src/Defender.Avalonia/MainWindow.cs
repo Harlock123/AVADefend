@@ -77,7 +77,9 @@ public sealed class MainWindow : Window
         switch (e.Key)
         {
             case Key.F11: SetFullscreen(WindowState != WindowState.FullScreen); e.Handled = true; return;
-            case Key.F1: _help.IsVisible = !_help.IsVisible; e.Handled = true; return;
+            case Key.F1:
+                if (_help.Child is TextBlock t) t.Text = ControlsHelp.Text(_host.Settings.Bindings); // reflect rebinding
+                _help.IsVisible = !_help.IsVisible; e.Handled = true; return;
             case Key.F10: OpenSettings(); e.Handled = true; return;
         }
         if (_help.IsVisible && e.Key == Key.Escape) { _help.IsVisible = false; e.Handled = true; return; }

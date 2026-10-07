@@ -109,7 +109,7 @@ public sealed partial class GameSession
     /// <summary>Structural checks so hand-edited or damaged files are rejected instead of crashing later.</summary>
     private static void Validate(SuspendData? d)
     {
-        static void Need(bool ok, string what) { if (!ok) throw new InvalidDataException("Suspend data is missing or invalid: " + what); }
+        static void Need([System.Diagnostics.CodeAnalysis.DoesNotReturnIf(false)] bool ok, string what) { if (!ok) throw new InvalidDataException("Suspend data is missing or invalid: " + what); }
         Need(d is not null, "data");
         Need(d!.Rules is not null && d.Player is not null, "rules/player");
         Need(d.Params is not null && d.Reserves is not null && d.Counters is not null && d.Palette is not null, "arrays");

@@ -71,7 +71,7 @@ public sealed class SettingsPanel : Border
         Check("Hold fire to repeat (rate-limited; original is one shot per press)", s.HoldToFire, v => s.HoldToFire = v);
         var speed = new ComboBox { ItemsSource = new[] { "100% (arcade speed)", "85%", "70%", "50%" } };
         double[] speeds = [1.0, 0.85, 0.7, 0.5];
-        speed.SelectedIndex = Math.Max(0, Array.IndexOf(speeds, s.GameSpeed));
+        speed.SelectedIndex = Array.IndexOf(speeds, speeds.MinBy(v => Math.Abs(v - s.GameSpeed))); // nearest preset
         speed.SelectionChanged += (_, _) => s.GameSpeed = speeds[Math.Max(0, speed.SelectedIndex)];
         Labeled("Game speed (shown on HUD)", speed);
         var slot = new ComboBox { ItemsSource = new[] { 1, 2, 3 }.Select(n => $"Slot {n}: {_host.DescribeSlot(n)}").ToArray(), SelectedIndex = s.SuspendSlot - 1 };
@@ -119,7 +119,11 @@ public sealed class SettingsPanel : Border
         var s = _host.Settings;
         if (key != "Escape")
         {
-            if (key == "Back") s.Bindings.Keyboard[b] = InputBindings.CreateDefault().Keyboard[b];
+            if (key == "Back")
+            {
+                // Restore this action's defaults without leaving any key bound to two actions.
+                foreach (var k in InputBindings.CreateDefault().Keyboard[b].Take(2).Reverse()) InputBindings.Rebind(s.Bindings.Keyboard, b, k);
+            }
             else
             {
                 InputBindings.Rebind(s.Bindings.Keyboard, b, key); // a key drives exactly one action
