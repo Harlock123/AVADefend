@@ -142,11 +142,11 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             retry gh release create "$GITHUB_REF_NAME" artifacts/* --title "AVADefend $GITHUB_REF_NAME" --generate-notes
           elif gh release view latest >/dev/null 2>&1; then
-            # Fail-safe update of the rolling pre-release: never delete it. Replace the files first (the old
-            # release stays usable if this fails), then move the tag to this commit, then refresh the notes.
+            # A rolling pre-release of the newest main build, updated in place and never deleted: replace the
+            # files first (the old release stays usable if this fails), then move the tag, then the notes.
             retry gh release upload latest artifacts/* --clobber
             retry gh api -X PATCH "repos/$GH_REPO/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true
-            retry gh release edit latest --prerelease --title "Latest build (main)" --notes "$notes"
+            retry gh release edit latest --prerelease --target "$GITHUB_SHA" --title "Latest build (main)" --notes "$notes"
           else
             retry gh release create latest artifacts/* --prerelease --target "$GITHUB_SHA" \
               --title "Latest build (main)" --notes "$notes"
