@@ -56,6 +56,13 @@ A build for the wrong processor will not start even though it is marked executab
 
 Unzip or untar and run `AVADefend` (`AVADefend.exe` on Windows). The builds are not code-signed: on macOS run `xattr -d com.apple.quarantine AVADefend` once (or right-click → Open); on Windows choose *More info → Run anyway* if SmartScreen asks. `AVADefend --selftest` prints a quick check of graphics, sound and gamepad support without opening a window.
 
+**Linux: sound and gamepads**
+
+Nothing extra to install. Sound and gamepad support (SDL2) are built into the download for every
+platform, ARM included, so you don't need `alsa-utils` (`aplay`) or a system SDL2. Sound goes
+out through whatever your desktop already runs (PipeWire, PulseAudio or ALSA); if no audio
+device can be opened the game still runs, silently. You do need an X11 or XWayland session.
+
 **Documentation**
 
 | File | Contents |
